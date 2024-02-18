@@ -50,7 +50,7 @@ It analyzes lotto mathematically and statistically in various ways.
 * HoSeong, Ahn (ahnshy@naver.com)
 
 
-# [Getting Started]
+# 📕 Referenced
 
 ### Reference Documentation
 
