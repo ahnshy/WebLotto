@@ -14,7 +14,7 @@ import java.util.Optional;
 
 public class LotteryRepositoryTest extends WebLottoApplicationTests {
 
-    @Autowired // Dependency Injection (DI) = Singleton Pattern
+    @Autowired
     private LotteryRepository lotteryRepository;
 
     @Test
