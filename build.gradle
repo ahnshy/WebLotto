@@ -1,0 +1,43 @@
+plugins {
+    id 'java'
+    id 'war'
+    id 'org.springframework.boot' version '2.7.9'
+    id 'io.spring.dependency-management' version '1.0.15.RELEASE'
+}
+
+group = 'com.github.ahnshy.weblotto'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    testImplementation 'org.testng:testng:7.1.0'
+    testImplementation 'org.testng:testng:7.1.0'
+    compileOnly 'org.projectlombok:lombok'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    annotationProcessor 'org.projectlombok:lombok'
+    providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.7.0'
+    implementation group: 'org.javassist', name: 'javassist', version: '3.15.0-GA'
+    implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
+    implementation group: 'net.sourceforge.jexcelapi', name: 'jxl', version: '2.6'
+    implementation 'org.apache.poi:poi:4.1.2' // xls
+    //implementation 'org.apache.poi:poi-oomxl:4.1.2' // xlsx
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
