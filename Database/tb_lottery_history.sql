@@ -1,0 +1,17 @@
+CREATE TABLE `tb_lottery_history` (
+	`round` INT(10) UNSIGNED NOT NULL,
+	`event_date` DATE NOT NULL,
+	`win_no1` TINYINT(3) UNSIGNED NOT NULL,
+	`win_no2` TINYINT(3) UNSIGNED NOT NULL,
+	`win_no3` TINYINT(3) UNSIGNED NOT NULL,
+	`win_no4` TINYINT(3) UNSIGNED NOT NULL,
+	`win_no5` TINYINT(3) UNSIGNED NOT NULL,
+	`win_no6` TINYINT(3) UNSIGNED NOT NULL,
+	`bonus_no` TINYINT(3) UNSIGNED NOT NULL,
+	`create_at` DATETIME NOT NULL DEFAULT current_timestamp(),
+	PRIMARY KEY (`round`) USING BTREE
+)
+COMMENT='추첨번호 이력'
+COLLATE='utf8mb4_general_ci'
+ENGINE=InnoDB
+;
