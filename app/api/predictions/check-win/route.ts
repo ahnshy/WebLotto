@@ -10,6 +10,14 @@ interface WinCheckRequest {
 
 export async function POST(req: NextRequest) {
   try {
+    // 환경 변수 런타임 검증
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE) {
+      return NextResponse.json(
+        { error: 'Supabase configuration missing' },
+        { status: 500 }
+      );
+    }
+
     const body: WinCheckRequest = await req.json();
     const { predictionId, roundNumber } = body;
 
