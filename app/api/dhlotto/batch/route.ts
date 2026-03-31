@@ -1,28 +1,89 @@
 import { NextRequest, NextResponse } from 'next/server';
 export const revalidate = 0;
-async function getRound(r:number){
-  const url = `https://www.dhlottery.co.kr/common.do?method=getLottoNumber&drwNo=${r}`;
-  const res = await fetch(url, { cache:'no-store' });
-  if(!res.ok) return null;
-  const js = await res.json();
-  if(js.returnValue !== 'success') return null;
-  return {
-    round: js.drwNo,
-    draw_date: js.drwNoDate,
-    n1: js.drwtNo1, n2: js.drwtNo2, n3: js.drwtNo3,
-    n4: js.drwtNo4, n5: js.drwtNo5, n6: js.drwtNo6,
-    bonus: js.bnusNo,
-    first_prize_winners: js.firstWinamnt ? js.firstPrzwnerCo ?? null : null,
-    first_prize_amount: js.firstWinamnt ? Number(js.firstWinamnt) : null,
-  };
+
+async function getRound(r: number){
+  try {
+    const url = `https://www.dhlottery.co.kr/lt645/selectPstLt645Info.do?srchStrLtEpsd=${r}&srchEndLtEpsd=${r}`;
+    
+    const res = await fetch(url, { 
+      cache:'no-store',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        'Accept': 'application/json, */*',
+        'Referer': 'https://www.dhlottery.co.kr/',
+      }
+    });
+    
+    if(!res.ok) return null;
+    
+    const text = await res.text();
+    if(!text || text.includes('<!DOCTYPE')) return null;
+    
+    const data = JSON.parse(text);
+    let items: any[] = [];
+    
+    // 실제 API 응답 형식: { data: { list: [...] } }
+    if (data && data.data && Array.isArray(data.data.list)) {
+      items = data.data.list;
+    } else if (data && Array.isArray(data.list)) {
+      items = data.list;
+    } else if (Array.isArray(data)) {
+      items = data;
+    } else if (data && typeof data === 'object') {
+      items = [data];
+    } else {
+      return null;
+    }
+    
+    if(items.length === 0) return null;
+    
+    const item = items[0];
+    if(!item) return null;
+
+    // 필드명 매핑: 새 형식 (ltEpsd, tm1WnNo~tm6WnNo, bnsWnNo, ltRflYmd)
+    const roundNum = item.ltEpsd || item.drwNo || r;
+    let drawDate = item.ltRflYmd || item.drwNoDate || '';
+    
+    // 날짜 포맷: YYYYMMDD → YYYY-MM-DD
+    if (drawDate && drawDate.length === 8) {
+      drawDate = `${drawDate.substring(0, 4)}-${drawDate.substring(4, 6)}-${drawDate.substring(6, 8)}`;
+    }
+    
+    if(!roundNum || !drawDate) return null;
+
+    const getNum = (newField: string, oldField: string) => {
+      const v = item[newField] !== undefined ? item[newField] : item[oldField];
+      return v ? parseInt(String(v), 10) : 0;
+    };
+
+    return {
+      round: roundNum,
+      draw_date: drawDate,
+      n1: getNum('tm1WnNo', 'drwtNo1'),
+      n2: getNum('tm2WnNo', 'drwtNo2'),
+      n3: getNum('tm3WnNo', 'drwtNo3'),
+      n4: getNum('tm4WnNo', 'drwtNo4'),
+      n5: getNum('tm5WnNo', 'drwtNo5'),
+      n6: getNum('tm6WnNo', 'drwtNo6'),
+      bonus: getNum('bnsWnNo', 'bnusNo'),
+      first_prize_winners: null,
+      first_prize_amount: null,
+    };
+  } catch(e) {
+    return null;
+  }
 }
+
 export async function GET(req: NextRequest){
   const { searchParams } = new URL(req.url);
   const s = parseInt(searchParams.get('start')||'1');
   const e = parseInt(searchParams.get('end')||String(s));
   const rows:any[] = [];
   for(let r=s; r<=e; r++){
-    try{ const one = await getRound(r); if(one) rows.push(one); }catch{}
+    try{ 
+      const one = await getRound(r); 
+      if(one) rows.push(one); 
+    }catch(err){}
     await new Promise(res=>setTimeout(res, 60));
   }
   return NextResponse.json({ rows, start:s, end:e });
