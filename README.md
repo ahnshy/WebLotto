@@ -14,8 +14,13 @@ Generate prediction picks, compare with all historical winning numbers, explore 
 - **Compare & Rank**: For any selected pick, compute **1st ~ 5th** rank hits across history (2nd prize recognizes **5 matches + bonus**).
 - **Full sync from source**: From **Round 1** to **latest** via  
   `GET https://www.dhlottery.co.kr/common.do?method=getLottoNumber&drwNo={round}`  
-  A progress bar shows batch progress (50 rounds per request window). Results upsert into `kr_lotto_results`.
-- **Storage**: User picks are stored in `draws` (Supabase). App reload shows the latest list.
+  A progress bar shows batch progress. Results upsert into `kr_lotto_results`.
+- **Prediction Storage & Win Checking**: User predictions are stored in `draws` table.  
+  **Win checking API** (`POST /api/predictions/check-win`) compares a prediction against any historical round and shows:
+  - Number of matches (0-6)
+  - Bonus number match status
+  - Prize tier prediction (1st ~ 5th or loss)
+- **Storage**: All user picks are persisted in Supabase. App reload shows the latest list.
 - **UX / UI**
   - **Night / Dark / Light** theme toggle (icon buttons)
   - **Sidebar** with **fold** button, responsive layouts
@@ -124,7 +129,10 @@ app/
   layout.tsx                       # Root layout, favicon, Theme provider
   page.tsx                         # Main page: switches view by sidebar section
   api/dhlotto/latest/route.ts      # Finds latest round by probing API (binary search)
-  api/dhlotto/batch/route.ts       # Fetch a range of rounds from DHLottery
+  api/dhlotto/batch/route.ts       # Fetch a range of rounds from DHLottery (legacy)
+  api/dhlotto/sync/route.ts        # NEW: Sync rounds to Supabase kr_lotto_results
+  api/predictions/route.ts         # NEW: POST save prediction / GET list predictions
+  api/predictions/check-win/route.ts # NEW: POST check win status for prediction
   theme/
     ThemeProviderRoot.tsx          # Mode context (Light/Dark/Night) with localStorage
     ThemeRegistry.tsx              # MUI theme; night palette
@@ -137,10 +145,12 @@ components/
   WinningsTable.tsx                # Recent→old, sticky header table
   PatternBoards.tsx                # Lotto-slip SVG boards (15 per page + Load more)
   DrawList.tsx                     # Saved picks with checkbox & per-item delete
-  CompareView.tsx                  # Rank aggregation + matching details
-  SyncPanel.tsx                    # Truncate + batch sync with progress
+  CompareView.tsx                  # NEW: Rank aggregation + win checking dialog
+  SyncPanel.tsx                    # NEW: Enhanced with alerts and error handling
+  Generator.tsx                    # NEW: Generates & saves predictions to Supabase
 lib/
   supabaseClient.ts                # Supabase client (anon)
+  supabaseAdmin.ts                 # Supabase admin (server-side)
 app/actions.ts                     # Server actions used by client (fetch/insert/upsert)
 public/
   favicon.ico, favicon-32.png,
@@ -153,12 +163,17 @@ README_SQL.sql                     # Full schema + RLS policies
 ## 🧠 Core Logic
 
 ### Data flow
-- **Sync** → `/api/dhlotto/latest` finds `latest` round.  
-  `/api/dhlotto/batch?start=1&end=latest` downloads JSON rows (rate‑limited small delay per round).  
-  Rows are **upserted** to `kr_lotto_results` in chunks.
-- **Picks** → `saveDraw(numbers)` inserts into `draws`.  
-  List reads from `draws` (latest first). Deleting supports **bulk** and **per‑row**.
-- **Rank** → For a selected pick, compare against each `kr_lotto_results` row:  
+- **Sync** → `/api/dhlotto/sync?start={s}&end={e}` fetches rounds from DHLottery API and **upserts** to `kr_lotto_results`.  
+  Real-time progress tracking with error reporting.
+- **Predictions** → `/api/predictions` (POST) saves a 6-number array to `draws`.  
+  `/api/predictions` (GET) lists all saved predictions (most recent first).
+- **Win Checking** → `/api/predictions/check-win` (POST) accepts a prediction ID and round number.  
+  Compares against `kr_lotto_results` and returns:
+  - **matchedCount**: Number of matching balls (0-6)
+  - **bonusMatched**: Whether bonus ball matches
+  - **winStatus**: 'win' or 'loss' based on KR Lotto prize rules
+  - **Details**: Prediction numbers, winning numbers, bonus ball
+- **Rank Matching** → For a selected pick, compare against each `kr_lotto_results` row:  
   `1st: 6`, `2nd: 5+bonus`, `3rd: 5`, `4th: 4`, `5th: 3` matches.
 
 ### UI behavior
@@ -177,7 +192,45 @@ README_SQL.sql                     # Full schema + RLS policies
 
 ---
 
-## 🧩 Changelog (this build)
+## 🧩 Changelog (v1.1.0 - Current Build)
+
+### ✨ New Features
+1. **ChatGPT-Style Sidebar**  
+   - Modern dark/light/night theme-aware design
+   - Smooth collapse/expand animation  
+   - Rounded menu items with hover states
+   - Fixed sync button at bottom
+   
+2. **Enhanced Synchronization**  
+   - New `/api/dhlotto/sync` endpoint for efficient batch sync
+   - Real-time progress tracking with error reporting
+   - Upsert logic prevents duplicate entries
+   
+3. **Prediction Management**  
+   - `/api/predictions` (POST) - Save new predictions to Supabase
+   - `/api/predictions` (GET) - Retrieve all saved predictions
+   - Generator button now persists predictions to DB
+   
+4. **Win Checking System**  
+   - `/api/predictions/check-win` API endpoint
+   - Dialog UI for checking wins by round number
+   - Detailed result display (matches, bonus, prize tier)
+   - Integrated into CompareView component
+   
+5. **Improved Components**  
+   - SyncPanel: Better status feedback with alerts
+   - Generator: Async save with snackbar notifications
+   - CompareView: Win checking dialog integration
+   - Sidebar: ChatGPT-inspired visual hierarchy
+
+### 🐛 Fixes
+- Fixed environment variable handling for Vercel deployment
+- Runtime validation for Supabase credentials
+- Proper error boundaries and fallbacks
+
+---
+
+## Previous Changelog
 
 1. **Three views wired to sidebar** (Winning table / Pattern boards / Prediction picks)
 2. **Loading indicators** for heavy views (dynamic import + backdrop spinner)
