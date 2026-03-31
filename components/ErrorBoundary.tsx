@@ -38,37 +38,32 @@ export default class ErrorBoundary extends React.Component<Props, State> {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            minHeight: '100vh',
+            minHeight: '400px',
             p: 2,
           }}
         >
           <Paper
             sx={{
-              p: 4,
+              p: 3,
               maxWidth: 600,
               textAlign: 'center',
             }}
           >
-            <ErrorOutlineIcon sx={{ fontSize: 64, color: 'error.main', mb: 2 }} />
-            <Typography variant="h5" gutterBottom>
+            <ErrorOutlineIcon sx={{ fontSize: 48, color: 'error.main', mb: 2 }} />
+            <Typography variant="h6" gutterBottom>
               오류가 발생했습니다
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2, wordBreak: 'break-word' }}>
               {this.state.error?.message || '알 수 없는 오류'}
             </Typography>
             <Stack direction="row" spacing={2} justifyContent="center">
-              <Button variant="contained" onClick={this.handleReset}>
+              <Button variant="contained" size="small" onClick={this.handleReset}>
                 다시 시도
               </Button>
-              <Button variant="outlined" onClick={() => window.location.reload()}>
-                페이지 새로고침
+              <Button variant="outlined" size="small" onClick={() => window.location.reload()}>
+                새로고침
               </Button>
             </Stack>
-            <Box sx={{ mt: 3, p: 2, bgcolor: 'action.hover', borderRadius: 1, textAlign: 'left' }}>
-              <Typography variant="caption" component="pre" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                {this.state.error?.stack}
-              </Typography>
-            </Box>
           </Paper>
         </Box>
       );
