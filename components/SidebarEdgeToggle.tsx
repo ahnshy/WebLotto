@@ -16,7 +16,7 @@ export default function SidebarEdgeToggle({ collapsed, setCollapsed }:{ collapse
     <Tooltip title={collapsed ? '사이드바 열기' : '사이드바 닫기'} placement="right" arrow>
       <IconButton
         size="small"
-        sx={{ position:'fixed', top:74, left, zIndex:(t)=>t.zIndex.appBar+2,
+        sx={{ position:'fixed', top:14, left, zIndex:(t)=>t.zIndex.appBar+2,
               borderRadius:2, bgcolor:'background.paper', boxShadow:3, '&:hover':{ bgcolor:'background.paper' } }}
         onClick={()=>setCollapsed(!collapsed)}>
         {collapsed ? <KeyboardDoubleArrowRightIcon/> : <KeyboardDoubleArrowLeftIcon/>}
