@@ -3,9 +3,9 @@ import * as React from 'react';
 import { Stack, Button, Card, CardContent, Typography } from '@mui/material';
 import NumberBall from './NumberBall';
 function generate(): number[] { const s=new Set<number>(); while(s.size<6) s.add(1+Math.floor(Math.random()*45)); return Array.from(s).sort((a,b)=>a-b); }
-export default function GeneratorPanel({ onPick }:{ onPick:(nums:number[])=>void }){
+export default function GeneratorPanel({ onPickAction }:{ onPickAction:(nums:number[])=>void }){
   const [cur, setCur] = React.useState<number[] | null>(null);
-  const click = ()=>{ const g=generate(); setCur(g); onPick(g); };
+  const click = ()=>{ const g=generate(); setCur(g); onPickAction(g); };
   return (<Card variant="outlined"><CardContent>
     <Typography variant="subtitle2">예상번호 추출</Typography>
     <Stack direction="row" spacing={1} alignItems="center" sx={{ mt:1 }}>
