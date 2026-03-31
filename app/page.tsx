@@ -12,20 +12,18 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import dynamic from 'next/dynamic';
 import { fetchDraws, saveDraw, fetchLottoHistoryAll, deleteDraws, LottoRow, DrawRow } from './actions';
 import { useNav } from '@/components/NavContext';
+import SyncPanel from '@/components/SyncPanel';
 
 // 기존 뷰(동적 import 유지)
-const DrawList = dynamic(()=>import('@/components/DrawList'));
-const CompareView = dynamic(()=>import('@/components/CompareView'));
+const DrawList = dynamic(()=>import('@/components/DrawList'), { ssr: false });
+const CompareView = dynamic(()=>import('@/components/CompareView'), { ssr: false });
 const PatternBoards = dynamic(()=>import('@/components/PatternBoards'), {
-  loading: ()=> <Backdrop open sx={{color:'#fff', zIndex:(t)=>t.zIndex.modal+1}}><CircularProgress/></Backdrop>
+  loading: ()=> <Backdrop open sx={{color:'#fff', zIndex:(t)=>t.zIndex.modal+1}}><CircularProgress/></Backdrop>,
+  ssr: false
 });
 const WinningsTable = dynamic(()=>import('@/components/WinningsTable'), {
-  loading: ()=> <Backdrop open sx={{color:'#fff', zIndex:(t)=>t.zIndex.modal+1}}><CircularProgress/></Backdrop>
-});
-
-// ✅ 동기화 패널 추가 (URL 이동 없이 이 페이지에서만 렌더)
-const SyncPanel = dynamic(()=>import('@/components/SyncPanel'), {
-  loading: ()=> <Backdrop open sx={{color:'#fff', zIndex:(t)=>t.zIndex.modal+1}}><CircularProgress/></Backdrop>
+  loading: ()=> <Backdrop open sx={{color:'#fff', zIndex:(t)=>t.zIndex.modal+1}}><CircularProgress/></Backdrop>,
+  ssr: false
 });
 
 export default function Page(){
@@ -42,8 +40,16 @@ export default function Page(){
   const ballSize = isXs ? 22 : isMdOnly ? 28 : 36;
 
   React.useEffect(()=>{ (async()=>{
-    const [d, h] = await Promise.all([fetchDraws(), fetchLottoHistoryAll()]);
-    setDraws(d); if(d.length) setSelected(d[0]); setHistory(h);
+    try {
+      const [d, h] = await Promise.all([fetchDraws(), fetchLottoHistoryAll()]);
+      setDraws(d || []); 
+      if(d && d.length) setSelected(d[0]); 
+      setHistory(h || []);
+    } catch (e) {
+      console.error('Failed to fetch data:', e);
+      setDraws([]);
+      setHistory([]);
+    }
   })(); }, []);
 
   // 무거운 뷰 전환 시만 잠깐 대기 원 표시
@@ -87,7 +93,7 @@ export default function Page(){
     setChecked(prev=>{ const n=new Set(prev); n.delete(id); return n; });
   };
 
-  // ✅ 동기화 화면: URL 이동 없이 이 페이지의 전용 단일 레이아웃로 렌더
+  // ✅ 동기화 화면: URL 이동 없이 이 페이지의 전용 단일 레이아웃으로 렌더
   if (section === '동기화') {
     return (
         <Grid container spacing={2} sx={{ flexWrap:'wrap' }}>
@@ -155,7 +161,7 @@ export default function Page(){
         {section==='예상번호 추출' && (
             <Grid item xs={12} md sx={{ order:{ xs:1, md:2 }, flexBasis:{ xs:'100%', md:420 }, flexGrow:0, flexShrink:0 }}>
               <Paper sx={{ p:2 }}>
-                <CompareView ballSize={ballSize} pick={selected?.numbers ?? null} history={history} />
+                <CompareView ballSize={ballSize} pick={selected?.numbers ?? null} pickId={selected?.id ?? null} history={history} />
               </Paper>
             </Grid>
         )}
