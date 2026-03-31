@@ -6,6 +6,14 @@ export const revalidate = 0;
 // 예측 번호 추가
 export async function POST(req: NextRequest) {
   try {
+    // 환경 변수 런타임 검증
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE) {
+      return NextResponse.json(
+        { error: 'Supabase configuration missing' },
+        { status: 500 }
+      );
+    }
+
     const body = await req.json();
     const { numbers } = body;
 
@@ -37,6 +45,14 @@ export async function POST(req: NextRequest) {
 // 예측 번호 목록 조회
 export async function GET(req: NextRequest) {
   try {
+    // 환경 변수 런타임 검증
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE) {
+      return NextResponse.json(
+        { error: 'Supabase configuration missing' },
+        { status: 500 }
+      );
+    }
+
     const { data, error } = await supabaseAdmin
       .from('draws')
       .select('*')
