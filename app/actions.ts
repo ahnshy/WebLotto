@@ -17,10 +17,36 @@ export async function deleteDraws(ids:string[]){
   if(error) throw error; return {count:count??0};
 }
 
-export async function fetchLottoHistoryAll(limit=1200){
-  const {data,error}=await supabase.from('kr_lotto_results')
-    .select('*').order('round',{ascending:false}).limit(limit);
-  if(error) throw error; return data as LottoRow[];
+export async function fetchLottoHistoryAll(limit?: number){
+  const pageSize = 1000;
+  const rows: LottoRow[] = [];
+
+  for (let from = 0; ; from += pageSize) {
+    const to = limit == null
+      ? from + pageSize - 1
+      : Math.min(from + pageSize - 1, limit - 1);
+
+    const { data, error } = await supabase
+      .from('kr_lotto_results')
+      .select('*')
+      .order('round', { ascending: false })
+      .range(from, to);
+
+    if (error) throw error;
+
+    const batch = (data ?? []) as LottoRow[];
+    rows.push(...batch);
+
+    if (limit != null && rows.length >= limit) {
+      return rows.slice(0, limit);
+    }
+
+    if (batch.length < pageSize) {
+      break;
+    }
+  }
+
+  return rows;
 }
 export async function truncateLotto(){ const { error } = await supabase.from('kr_lotto_results').delete().neq('round', -1); if (error) throw error; return true; }
 export async function upsertLottoBatch(rows: LottoRow[]){ if(!rows.length) return 0; const { error } = await supabase.from('kr_lotto_results').upsert(rows, { onConflict: 'round' }); if (error) throw error; return rows.length; }
