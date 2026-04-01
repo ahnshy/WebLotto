@@ -56,6 +56,22 @@ async function getRound(r: number){
       return v ? parseInt(String(v), 10) : 0;
     };
 
+    const getOptionalNum = (...fields: string[]) => {
+      for (const field of fields) {
+        const value = item[field];
+        if (value === undefined || value === null || value === '') {
+          continue;
+        }
+
+        const parsed = parseInt(String(value), 10);
+        if (!Number.isNaN(parsed)) {
+          return parsed;
+        }
+      }
+
+      return null;
+    };
+
     return {
       round: roundNum,
       draw_date: drawDate,
@@ -66,8 +82,8 @@ async function getRound(r: number){
       n5: getNum('tm5WnNo', 'drwtNo5'),
       n6: getNum('tm6WnNo', 'drwtNo6'),
       bonus: getNum('bnsWnNo', 'bnusNo'),
-      first_prize_winners: null,
-      first_prize_amount: null,
+      first_prize_winners: getOptionalNum('rnk1WnNope', 'firstPrzwnerCo'),
+      first_prize_amount: getOptionalNum('rnk1WnAmt', 'firstWinamnt'),
     };
   } catch(e) {
     return null;
