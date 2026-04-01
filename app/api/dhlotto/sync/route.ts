@@ -83,6 +83,8 @@ function parseItem(item: any, fallbackRound: number): {
   round: number; draw_date: string;
   n1: number; n2: number; n3: number; n4: number; n5: number; n6: number;
   bonus: number;
+  first_prize_winners: number | null;
+  first_prize_amount: number | null;
 } | null {
   if (!item || typeof item !== 'object') return null;
 
@@ -102,6 +104,22 @@ function parseItem(item: any, fallbackRound: number): {
     return isNaN(n) ? 0 : Math.max(0, n);
   };
 
+  const getOptionalNum = (...fields: string[]): number | null => {
+    for (const field of fields) {
+      const val = item[field];
+      if (val === undefined || val === null || val === '') {
+        continue;
+      }
+
+      const n = parseInt(String(val), 10);
+      if (!isNaN(n)) {
+        return Math.max(0, n);
+      }
+    }
+
+    return null;
+  };
+
   return {
     round: roundNum,
     draw_date: drawDate,
@@ -112,6 +130,8 @@ function parseItem(item: any, fallbackRound: number): {
     n5: getNum('tm5WnNo', 'drwtNo5'),
     n6: getNum('tm6WnNo', 'drwtNo6'),
     bonus: getNum('bnsWnNo', 'bnusNo'),
+    first_prize_winners: getOptionalNum('rnk1WnNope', 'firstPrzwnerCo'),
+    first_prize_amount: getOptionalNum('rnk1WnAmt', 'firstWinamnt'),
   };
 }
 
