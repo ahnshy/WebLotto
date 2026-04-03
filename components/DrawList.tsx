@@ -11,7 +11,7 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import DeleteIcon from '@mui/icons-material/Delete';
 import NumberBall from './NumberBall';
 import type { DrawRow } from '@/app/actions';
@@ -39,9 +39,49 @@ export default function DrawList({
   const size = isXs ? Math.min(ballSize, 20) : ballSize;
   // 볼 간격: 작은 화면에서 더 촘촘하게
   const gap = isXs ? 0.25 : 0.5;
+  const isNight = theme.palette.background.paper === '#151b2f';
+  const scrollbarThumb = isNight
+    ? alpha('#4f46e5', 0.45)
+    : theme.palette.mode === 'dark'
+      ? alpha(theme.palette.primary.light, 0.45)
+      : alpha(theme.palette.primary.main, 0.35);
+  const scrollbarThumbHover = isNight
+    ? alpha('#4f46e5', 0.7)
+    : theme.palette.mode === 'dark'
+      ? alpha(theme.palette.primary.light, 0.65)
+      : alpha(theme.palette.primary.main, 0.55);
+  const scrollbarTrack = alpha(theme.palette.text.primary, theme.palette.mode === 'dark' ? 0.1 : 0.06);
 
   return (
-    <List dense disablePadding sx={{ width: '100%', maxHeight: '70vh', overflowY: 'auto', overflowX: 'hidden' }}>
+    <List
+      dense
+      disablePadding
+      sx={{
+        width: '100%',
+        maxHeight: '70vh',
+        overflowY: 'auto',
+        overflowX: 'auto',
+        scrollbarColor: `${scrollbarThumb} ${scrollbarTrack}`,
+        scrollbarWidth: 'thin',
+        '&::-webkit-scrollbar': {
+          width: 8,
+          height: 8,
+        },
+        '&::-webkit-scrollbar-track': {
+          bgcolor: scrollbarTrack,
+          borderRadius: 999,
+        },
+        '&::-webkit-scrollbar-thumb': {
+          bgcolor: scrollbarThumb,
+          borderRadius: 999,
+          border: '2px solid transparent',
+          backgroundClip: 'padding-box',
+        },
+        '&::-webkit-scrollbar-thumb:hover': {
+          bgcolor: scrollbarThumbHover,
+        },
+      }}
+    >
       {draws.map((d) => (
         <ListItem
           key={d.id}
