@@ -1,92 +1,129 @@
 'use client';
 import * as React from 'react';
 import {
-    Box, Drawer, List, ListItemButton, ListItemIcon, ListItemText,
-    Collapse, Divider, useMediaQuery, IconButton, Tooltip, Typography, alpha
+    Box,
+    Collapse,
+    Divider,
+    Drawer,
+    IconButton,
+    List,
+    ListItemButton,
+    ListItemIcon,
+    ListItemText,
+    Tooltip,
+    Typography,
+    alpha,
+    useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import BubbleChartIcon from '@mui/icons-material/BubbleChart';
 import CasinoIcon from '@mui/icons-material/Casino';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import CloudSyncIcon from '@mui/icons-material/CloudSync';
-import KeyboardDoubleArrowLeftIcon from '@mui/icons-material/KeyboardDoubleArrowLeft';
-import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import Image from 'next/image';
 import { useNav } from './NavContext';
-import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 
 export const SIDEBAR_FULL = 280;
 export const SIDEBAR_MINI = 80;
 
-/** ChatGPT 스타일 사이드바 with 다크/라이트/나이트 테마 지원 */
 export default function Sidebar({
-                                    open, onClose, collapsed, setCollapsed
-                                }:{ open:boolean; onClose:()=>void; collapsed:boolean; setCollapsed:(v:boolean)=>void }){
-
+    open,
+    onClose,
+    collapsed,
+    setCollapsed,
+}: {
+    open: boolean;
+    onClose: () => void;
+    collapsed: boolean;
+    setCollapsed: (v: boolean) => void;
+}) {
     const { section, setSection } = useNav();
     const theme = useTheme();
     const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
 
-    const [open1, setOpen1] = React.useState(true);
-    const [open2, setOpen2] = React.useState(true);
+    const [openAnalysis, setOpenAnalysis] = React.useState(true);
+    const [openExtract, setOpenExtract] = React.useState(true);
 
     const width = collapsed ? SIDEBAR_MINI : SIDEBAR_FULL;
-    const ItemText = ({primary}:{primary:string}) => collapsed ? null : <ListItemText primary={primary} />;
+    const ItemText = ({ primary }: { primary: string }) => (
+        collapsed ? null : <ListItemText primary={primary} />
+    );
 
-    // 테마별 스타일 정의
     const isDark = theme.palette.mode === 'dark';
     const isNight = theme.palette.background.paper === '#151b2f';
 
     const menuItemHoverBg = isNight
-        ? alpha('#4f46e5', 0.15)  // 나이트: 인디고 계열
+        ? alpha('#4f46e5', 0.15)
         : isDark
-        ? alpha('#90caf9', 0.12)  // 다크: 라이트 블루
-        : alpha('#3b82f6', 0.08); // 라이트: 블루
+            ? alpha('#90caf9', 0.12)
+            : alpha('#3b82f6', 0.08);
 
     const menuItemSelectedBg = isNight
         ? alpha('#4f46e5', 0.25)
         : isDark
-        ? alpha('#90caf9', 0.2)
-        : alpha('#3b82f6', 0.12);
+            ? alpha('#90caf9', 0.2)
+            : alpha('#3b82f6', 0.12);
 
     const menuItemBorderRadius = 10;
 
+    const selectSection = (nextSection: '당첨번호보기' | '당첨 패턴 분석' | '난수 추출' | '동기화') => {
+        setSection(nextSection);
+        if (!isMdUp) onClose();
+    };
+
+    const handleLogoClick = () => {
+        if (isMdUp && collapsed) setCollapsed(false);
+    };
+
+    const headerLogo = (
+        <IconButton
+            onClick={handleLogoClick}
+            disableRipple={!collapsed}
+            sx={{
+                width: 36,
+                height: 36,
+                borderRadius: 1,
+                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                flexShrink: 0,
+                cursor: collapsed && isMdUp ? 'pointer' : 'default',
+                '&:hover': {
+                    bgcolor: alpha(theme.palette.primary.main, collapsed && isMdUp ? 0.18 : 0.1),
+                },
+            }}
+        >
+            <Image src="/favicon-32.png" alt="WebLotto" width={24} height={24} />
+        </IconButton>
+    );
+
     const content = (
-        <Box role="presentation" sx={{
-            width,
-            display:'flex',
-            flexDirection:'column',
-            height:'100%',
-            bgcolor: theme.palette.background.paper,
-            borderRight: `1px solid ${alpha(theme.palette.text.primary, 0.08)}`,
-            transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-        }}>
-            {/* 상단: 로고 및 제목 */}
-            <Box sx={{
-                display:'flex',
-                alignItems:'center',
-                gap: collapsed ? 0.5 : 1.5,
-                px: 1.5,
-                py: 1.5,
-                height: 64,
-                borderBottom: `1px solid ${alpha(theme.palette.text.primary, 0.08)}`,
-            }}>
-                <Box sx={{
+        <Box
+            role="presentation"
+            sx={{
+                width,
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%',
+                bgcolor: theme.palette.background.paper,
+                borderRight: `1px solid ${alpha(theme.palette.text.primary, 0.08)}`,
+                transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            }}
+        >
+            <Box
+                sx={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 36,
-                    height: 36,
-                    borderRadius: 1,
-                    bgcolor: alpha(theme.palette.primary.main, 0.1),
-                    flexShrink: 0
-                }}>
-                    <Image src="/favicon-32.png" alt="WebLotto" width={24} height={24} />
-                </Box>
+                    gap: collapsed ? 0.5 : 1.5,
+                    px: 1.5,
+                    py: 1.5,
+                    height: 64,
+                    borderBottom: `1px solid ${alpha(theme.palette.text.primary, 0.08)}`,
+                }}
+            >
+                {headerLogo}
                 {!collapsed && (
                     <Typography
                         sx={{
@@ -96,52 +133,105 @@ export default function Sidebar({
                             flex: 1,
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
+                            whiteSpace: 'nowrap',
                         }}
                     >
                         WebLotto
                     </Typography>
                 )}
-                <Box sx={{ flex:1 }} />
-                {isMdUp && (
-                    <Tooltip title={collapsed ? '펼치기' : '접기'} placement="right">
+                <Box sx={{ flex: 1 }} />
+                {isMdUp && !collapsed && (
+                    <Tooltip
+                        title="사이드바 닫기"
+                        placement="bottom"
+                        slotProps={{
+                            tooltip: {
+                                sx: {
+                                    bgcolor: '#111',
+                                    color: '#fff',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700,
+                                    borderRadius: 1,
+                                    px: 1,
+                                    py: 0.5,
+                                },
+                            },
+                            arrow: {
+                                sx: {
+                                    color: '#111',
+                                },
+                            },
+                        }}
+                        arrow
+                    >
                         <IconButton
                             size="small"
-                            onClick={()=>setCollapsed(!collapsed)}
+                            onClick={() => setCollapsed(true)}
                             sx={{
-                                color: 'action.active',
-                                '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.08) }
+                                width: 30,
+                                height: 30,
+                                borderRadius: '8px',
+                                bgcolor: alpha(theme.palette.text.primary, 0.08),
+                                border: `1px solid ${alpha(theme.palette.text.primary, 0.08)}`,
+                                '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.12) },
                             }}
                         >
-                            {collapsed ? <KeyboardDoubleArrowRightIcon fontSize="small"/> : <KeyboardDoubleArrowLeftIcon fontSize="small"/>}
+                            <Box
+                                sx={{
+                                    position: 'relative',
+                                    width: 16,
+                                    height: 16,
+                                }}
+                            >
+                                <Box
+                                    sx={{
+                                        position: 'absolute',
+                                        inset: 0,
+                                        borderRadius: '5px',
+                                        border: `1.5px solid ${alpha(theme.palette.text.primary, 0.75)}`,
+                                    }}
+                                />
+                                <Box
+                                    sx={{
+                                        position: 'absolute',
+                                        top: 2,
+                                        bottom: 2,
+                                        right: 3,
+                                        width: 1.5,
+                                        borderRadius: 999,
+                                        bgcolor: alpha(theme.palette.text.primary, 0.75),
+                                    }}
+                                />
+                            </Box>
                         </IconButton>
                     </Tooltip>
                 )}
             </Box>
 
-            {/* 중간: 메뉴 목록 */}
-            <List subheader={null} sx={{
-                pt: 1.5,
-                px: 1,
-                flex:1,
-                overflow: 'auto',
-                '&::-webkit-scrollbar': {
-                    width: '6px',
-                },
-                '&::-webkit-scrollbar-track': {
-                    bgcolor: 'transparent',
-                },
-                '&::-webkit-scrollbar-thumb': {
-                    bgcolor: alpha(theme.palette.text.primary, 0.1),
-                    borderRadius: '3px',
-                    '&:hover': {
-                        bgcolor: alpha(theme.palette.text.primary, 0.15),
-                    }
-                }
-            }}>
-                {/* 분석 섹션 헤더 */}
+            <List
+                subheader={null}
+                sx={{
+                    pt: 1.5,
+                    px: 1,
+                    flex: 1,
+                    overflow: 'auto',
+                    '&::-webkit-scrollbar': {
+                        width: '6px',
+                    },
+                    '&::-webkit-scrollbar-track': {
+                        bgcolor: 'transparent',
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                        bgcolor: alpha(theme.palette.text.primary, 0.1),
+                        borderRadius: '3px',
+                        '&:hover': {
+                            bgcolor: alpha(theme.palette.text.primary, 0.15),
+                        },
+                    },
+                }}
+            >
                 <ListItemButton
-                    onClick={()=>setOpen1(!open1)}
+                    onClick={() => setOpenAnalysis((prev) => !prev)}
                     sx={{
                         borderRadius: menuItemBorderRadius,
                         mb: 0.5,
@@ -150,63 +240,65 @@ export default function Sidebar({
                         '&:hover': {
                             bgcolor: menuItemHoverBg,
                         },
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
                     }}
                 >
                     <ListItemIcon sx={{ minWidth: 40 }}>
-                        <AnalyticsIcon sx={{ fontSize: '1.25rem' }}/>
+                        <AnalyticsIcon sx={{ fontSize: '1.25rem' }} />
                     </ListItemIcon>
                     <ItemText primary="분석" />
-                    {collapsed ? null : (open1 ? <ExpandLess sx={{ fontSize: '1.2rem' }} /> : <ExpandMore sx={{ fontSize: '1.2rem' }} />)}
+                    {!collapsed && (openAnalysis ? <ExpandLess sx={{ fontSize: '1.2rem' }} /> : <ExpandMore sx={{ fontSize: '1.2rem' }} />)}
                 </ListItemButton>
-                <Collapse in={open1 || collapsed} timeout="auto" unmountOnExit={!collapsed}>
+                <Collapse in={openAnalysis || collapsed} timeout="auto" unmountOnExit={!collapsed}>
                     <List component="div" disablePadding sx={{ mb: 1 }}>
                         <ListItemButton
-                            selected={section==='당첨번호보기'}
+                            selected={section === '당첨번호보기'}
                             sx={{
                                 borderRadius: menuItemBorderRadius,
                                 mx: 0.5,
                                 mb: 0.5,
                                 pl: collapsed ? 1.5 : 3,
                                 py: 0.875,
-                                bgcolor: section==='당첨번호보기' ? menuItemSelectedBg : 'transparent',
+                                bgcolor: section === '당첨번호보기' ? menuItemSelectedBg : 'transparent',
                                 '&:hover': {
                                     bgcolor: menuItemHoverBg,
                                 },
                                 '&.Mui-selected': {
                                     bgcolor: menuItemSelectedBg,
-                                    '&:hover': { bgcolor: menuItemSelectedBg }
+                                    '&:hover': { bgcolor: menuItemSelectedBg },
                                 },
-                                transition: 'all 0.2s ease'
+                                transition: 'all 0.2s ease',
                             }}
-                            onClick={()=>{ setSection('당첨번호보기'); if(!isMdUp) onClose(); }}>
+                            onClick={() => selectSection('당첨번호보기')}
+                        >
                             <ListItemIcon sx={{ minWidth: 40 }}>
-                                <EmojiEventsIcon sx={{ fontSize: '1.1rem' }}/>
+                                <EmojiEventsIcon sx={{ fontSize: '1.1rem' }} />
                             </ListItemIcon>
                             <ItemText primary="당첨번호보기" />
                         </ListItemButton>
 
                         <ListItemButton
-                            selected={section==='당첨 패턴 분석'}
+                            selected={section === '당첨 패턴 분석'}
                             sx={{
                                 borderRadius: menuItemBorderRadius,
                                 mx: 0.5,
                                 mb: 0.5,
                                 pl: collapsed ? 1.5 : 3,
                                 py: 0.875,
-                                bgcolor: section==='당첨 패턴 분석' ? menuItemSelectedBg : 'transparent',
+                                bgcolor: section === '당첨 패턴 분석' ? menuItemSelectedBg : 'transparent',
                                 '&:hover': {
                                     bgcolor: menuItemHoverBg,
                                 },
                                 '&.Mui-selected': {
                                     bgcolor: menuItemSelectedBg,
-                                    '&:hover': { bgcolor: menuItemSelectedBg }
+                                    '&:hover': { bgcolor: menuItemSelectedBg },
                                 },
-                                transition: 'all 0.2s ease'
+                                transition: 'all 0.2s ease',
                             }}
-                            onClick={()=>{ setSection('당첨 패턴 분석'); if(!isMdUp) onClose(); }}>
+                            onClick={() => selectSection('당첨 패턴 분석')}
+                        >
                             <ListItemIcon sx={{ minWidth: 40 }}>
-                                <BubbleChartIcon sx={{ fontSize: '1.1rem' }}/>
+                                <BubbleChartIcon sx={{ fontSize: '1.1rem' }} />
                             </ListItemIcon>
                             <ItemText primary="당첨 패턴 분석" />
                         </ListItemButton>
@@ -215,9 +307,8 @@ export default function Sidebar({
 
                 <Divider sx={{ my: 0.5, opacity: 0.5 }} />
 
-                {/* 추출 섹션 헤더 */}
                 <ListItemButton
-                    onClick={()=>setOpen2(!open2)}
+                    onClick={() => setOpenExtract((prev) => !prev)}
                     sx={{
                         borderRadius: menuItemBorderRadius,
                         mb: 0.5,
@@ -226,83 +317,101 @@ export default function Sidebar({
                         '&:hover': {
                             bgcolor: menuItemHoverBg,
                         },
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
                     }}
                 >
                     <ListItemIcon sx={{ minWidth: 40 }}>
-                        <CasinoIcon sx={{ fontSize: '1.25rem' }}/>
+                        <CasinoIcon sx={{ fontSize: '1.25rem' }} />
                     </ListItemIcon>
                     <ItemText primary="추출" />
-                    {collapsed ? null : (open2 ? <ExpandLess sx={{ fontSize: '1.2rem' }} /> : <ExpandMore sx={{ fontSize: '1.2rem' }} />)}
+                    {!collapsed && (openExtract ? <ExpandLess sx={{ fontSize: '1.2rem' }} /> : <ExpandMore sx={{ fontSize: '1.2rem' }} />)}
                 </ListItemButton>
-                <Collapse in={open2 || collapsed} timeout="auto" unmountOnExit={!collapsed}>
+                <Collapse in={openExtract || collapsed} timeout="auto" unmountOnExit={!collapsed}>
                     <List component="div" disablePadding sx={{ mb: 1 }}>
                         <ListItemButton
-                            selected={section==='예상번호 추출'}
+                            selected={section === '난수 추출'}
                             sx={{
                                 borderRadius: menuItemBorderRadius,
                                 mx: 0.5,
                                 mb: 0.5,
                                 pl: collapsed ? 1.5 : 3,
                                 py: 0.875,
-                                bgcolor: section==='예상번호 추출' ? menuItemSelectedBg : 'transparent',
+                                bgcolor: section === '난수 추출' ? menuItemSelectedBg : 'transparent',
                                 '&:hover': {
                                     bgcolor: menuItemHoverBg,
                                 },
                                 '&.Mui-selected': {
                                     bgcolor: menuItemSelectedBg,
-                                    '&:hover': { bgcolor: menuItemSelectedBg }
+                                    '&:hover': { bgcolor: menuItemSelectedBg },
                                 },
-                                transition: 'all 0.2s ease'
+                                transition: 'all 0.2s ease',
                             }}
-                            onClick={()=>{ setSection('예상번호 추출'); if(!isMdUp) onClose(); }}>
+                            onClick={() => selectSection('난수 추출')}
+                        >
                             <ListItemIcon sx={{ minWidth: 40 }}>
-                                <AutoFixHighIcon sx={{ fontSize: '1.1rem' }}/>
+                                <AutoFixHighIcon sx={{ fontSize: '1.1rem' }} />
                             </ListItemIcon>
-                            <ItemText primary="예상번호 추출" />
-                        </ListItemButton>
-
-                        {/* 동기화 메뉴를 추출 섹션 하단에 추가 */}
-                        <ListItemButton
-                            selected={section==='동기화'}
-                            sx={{
-                                borderRadius: menuItemBorderRadius,
-                                mx: 0.5,
-                                mb: 0.5,
-                                pl: collapsed ? 1.5 : 3,
-                                py: 0.875,
-                                bgcolor: section==='동기화' ? menuItemSelectedBg : 'transparent',
-                                '&:hover': {
-                                    bgcolor: menuItemHoverBg,
-                                },
-                                '&.Mui-selected': {
-                                    bgcolor: menuItemSelectedBg,
-                                    '&:hover': { bgcolor: menuItemSelectedBg }
-                                },
-                                transition: 'all 0.2s ease'
-                            }}
-                            onClick={()=>{ setSection('동기화'); if(!isMdUp) onClose(); }}>
-                            <ListItemIcon sx={{ minWidth: 40 }}>
-                                <CloudSyncIcon sx={{ fontSize: '1.1rem' }}/>
-                            </ListItemIcon>
-                            <ItemText primary="동기화" />
+                            <ItemText primary="난수 추출" />
                         </ListItemButton>
                     </List>
                 </Collapse>
-            </List>
 
-            {/* 하단 고정 영역 - 불필요하므로 제거 */}
+                <Divider sx={{ my: 0.5, opacity: 0.5 }} />
+
+                <ListItemButton
+                    selected={section === '동기화'}
+                    sx={{
+                        borderRadius: menuItemBorderRadius,
+                        mb: 0.5,
+                        px: 1.5,
+                        py: 1,
+                        bgcolor: section === '동기화' ? menuItemSelectedBg : 'transparent',
+                        '&:hover': {
+                            bgcolor: menuItemHoverBg,
+                        },
+                        '&.Mui-selected': {
+                            bgcolor: menuItemSelectedBg,
+                            '&:hover': { bgcolor: menuItemSelectedBg },
+                        },
+                        transition: 'all 0.2s ease',
+                    }}
+                    onClick={() => selectSection('동기화')}
+                >
+                    <ListItemIcon sx={{ minWidth: 40 }}>
+                        <CloudSyncIcon sx={{ fontSize: '1.25rem' }} />
+                    </ListItemIcon>
+                    <ItemText primary="동기화" />
+                </ListItemButton>
+            </List>
         </Box>
     );
 
     return isMdUp ? (
-        <Drawer variant="permanent" open
-                sx={{ height: '100%', '& .MuiDrawer-paper': { position: 'relative', width, height: '100%', transition:'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)', boxSizing:'border-box', overflow: 'hidden' } }}>
+        <Drawer
+            variant="permanent"
+            open
+            sx={{
+                height: '100%',
+                '& .MuiDrawer-paper': {
+                    position: 'relative',
+                    width,
+                    height: '100%',
+                    transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxSizing: 'border-box',
+                    overflow: 'hidden',
+                },
+            }}
+        >
             {content}
         </Drawer>
     ) : (
-        <Drawer variant="temporary" open={open} onClose={onClose} ModalProps={{ keepMounted: true }}
-                sx={{ '& .MuiDrawer-paper': { width, boxSizing:'border-box' } }}>
+        <Drawer
+            variant="temporary"
+            open={open}
+            onClose={onClose}
+            ModalProps={{ keepMounted: true }}
+            sx={{ '& .MuiDrawer-paper': { width, boxSizing: 'border-box' } }}
+        >
             {content}
         </Drawer>
     );
