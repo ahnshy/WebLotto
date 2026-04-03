@@ -130,7 +130,7 @@ export default function Page() {
         <Paper sx={{ p: { xs: 1.5, sm: 2 }, position: 'relative', minHeight: 200 }}>
           {section === '당첨번호보기' && <WinningsTable rows={history} />}
           {section === '당첨 패턴 분석' && <PatternBoards rows={history} />}
-          {section === '예상번호 추출' && (
+          {section === '난수 추출' && (
             <Stack spacing={1.5}>
               <Stack
                 direction={{ xs: 'column', sm: 'row' }}
@@ -196,7 +196,7 @@ export default function Page() {
         </Paper>
       </Grid>
 
-      {section === '예상번호 추출' && (
+      {section === '난수 추출' && (
         <Grid item xs={12} md sx={{ order: { xs: 2, md: 2 }, flexBasis: { xs: '100%', md: 420 }, flexGrow: 0, flexShrink: 0 }}>
           <Paper sx={{ p: { xs: 1.5, sm: 2 } }}>
             <CompareView ballSize={ballSize} pick={selected?.numbers ?? null} pickId={selected?.id ?? null} history={history} />
