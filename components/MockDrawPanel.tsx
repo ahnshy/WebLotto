@@ -160,7 +160,7 @@ export default function MockDrawPanel() {
             const dx = target.x - ball.x;
             const dy = target.y - ball.y;
             const distance = Math.hypot(dx, dy) || 1;
-            const speed = 7.4 * delta;
+            const speed = 13.5 * delta;
 
             if (distance <= speed) {
               const nextIndex = ball.routeIndex + 1;
@@ -286,8 +286,23 @@ export default function MockDrawPanel() {
         const timer = window.setTimeout(() => {
           setBalls((prev) => {
             let consumed = false;
-            return prev.map((ball): SimBall => {
+            let fallbackIndex = prev.findIndex((ball) => ball.phase === 'bowl');
+
+            return prev.map((ball, ballIndex): SimBall => {
               if (!consumed && ball.number === winner && ball.phase === 'bowl') {
+                consumed = true;
+                return {
+                  ...ball,
+                  phase: 'travel',
+                  route: buildTravelRoute(index),
+                  routeIndex: 0,
+                  resultIndex: index,
+                  vx: 0,
+                  vy: 0,
+                };
+              }
+
+              if (!consumed && ballIndex === fallbackIndex && ball.phase === 'bowl') {
                 consumed = true;
                 return {
                   ...ball,
@@ -308,10 +323,10 @@ export default function MockDrawPanel() {
             const finish = window.setTimeout(() => setRunning(false), 1600);
             timersRef.current.push(finish);
           }
-        }, index * 980);
+        }, index * 650);
         timersRef.current.push(timer);
       });
-    }, 1000);
+    }, 450);
 
     timersRef.current.push(warmup);
   }, [clearTimers, running]);
