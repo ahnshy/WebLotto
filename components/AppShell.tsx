@@ -1,18 +1,22 @@
 'use client';
 import * as React from 'react';
-import { AppBar, Box, Toolbar, Typography, ToggleButtonGroup, ToggleButton, Tooltip, IconButton, useMediaQuery } from '@mui/material';
+import { AppBar, Avatar, Box, Button, Toolbar, Typography, ToggleButtonGroup, ToggleButton, Tooltip, IconButton, useMediaQuery } from '@mui/material';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import NightlightRoundIcon from '@mui/icons-material/NightlightRound';
 import MenuIcon from '@mui/icons-material/Menu';
+import GoogleIcon from '@mui/icons-material/Google';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { useTheme } from '@mui/material/styles';
 import { useThemeMode } from '@/app/theme/ThemeProviderRoot';
 import Sidebar, { SIDEBAR_FULL, SIDEBAR_MINI } from './Sidebar';
 import SidebarEdgeToggle from './SidebarEdgeToggle';
 import ErrorBoundary from './ErrorBoundary';
+import { useAuth } from './AuthContext';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { mode, setMode } = useThemeMode();
+  const { email, displayName, avatarUrl, loading, signInWithGoogle, signOut } = useAuth();
   const handleChange = (_: any, val: 'light' | 'dark' | 'night' | null) => { if (val) setMode(val); };
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
@@ -68,6 +72,51 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <Tooltip title="Dark"><ToggleButton value="dark" aria-label="dark-mode"><DarkModeIcon fontSize="small" /></ToggleButton></Tooltip>
                 <Tooltip title="Night"><ToggleButton value="night" aria-label="night-mode"><NightlightRoundIcon fontSize="small" /></ToggleButton></Tooltip>
               </ToggleButtonGroup>
+              {email ? (
+                <Tooltip title={`${displayName ?? email} (${email})`}>
+                  <Button
+                    color="inherit"
+                    variant="outlined"
+                    onClick={() => void signOut()}
+                    startIcon={(
+                      <Avatar
+                        src={avatarUrl ?? undefined}
+                        sx={{ width: 24, height: 24, fontSize: 12 }}
+                      >
+                        {(displayName ?? email)?.[0]?.toUpperCase()}
+                      </Avatar>
+                    )}
+                    endIcon={<LogoutIcon fontSize="small" />}
+                    sx={{
+                      textTransform: 'none',
+                      borderColor: 'rgba(255,255,255,0.24)',
+                      color: 'inherit',
+                      maxWidth: 240,
+                      '&:hover': { borderColor: 'rgba(255,255,255,0.4)' },
+                    }}
+                  >
+                    <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }}>
+                      {displayName ?? email}
+                    </Box>
+                  </Button>
+                </Tooltip>
+              ) : (
+                <Button
+                  color="inherit"
+                  variant="outlined"
+                  onClick={() => void signInWithGoogle()}
+                  startIcon={<GoogleIcon />}
+                  disabled={loading}
+                  sx={{
+                    textTransform: 'none',
+                    borderColor: 'rgba(255,255,255,0.24)',
+                    color: 'inherit',
+                    '&:hover': { borderColor: 'rgba(255,255,255,0.4)' },
+                  }}
+                >
+                  Google 로그인
+                </Button>
+              )}
             </Toolbar>
           </AppBar>
 
