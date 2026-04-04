@@ -181,6 +181,21 @@ README_SQL.sql                     # Full schema + RLS policies
 - **Prediction Picks**: Right panel shows **current pick & rank history**; left panel contains **Generate** button and pick list.
 - **Pattern boards**: SVG padding + `overflow: visible` prevents clipped lines. **Load more** appends 15 boards each click.
 
+### 추출 알고리즘
+- **난수 추출**
+  - **모델명**: Pseudo Random Number Generator (PRNG) based unique sampler
+  - **학습법**: 학습 없음. `1~45` 범위에서 중복 없이 6개를 무작위 생성한 뒤 오름차순 정렬합니다.
+- **AI 딥러닝 추출**
+  - **모델명**: LSTM (Long Short-Term Memory) multi-label predictor
+  - **학습법**: `kr_lotto_results`의 과거 회차를 시계열 윈도우로 묶고, 각 회차의 `6개 당첨번호 + 보너스`를 정규화 입력으로 사용합니다.
+  - **학습 방식**: 2-layer LSTM + Dense sigmoid 출력으로 다음 회차에 각 번호가 포함될 확률을 multi-label 형태로 학습합니다.
+  - **추출 방식**: 예측 확률 상위 후보군에서 가중 랜덤 샘플링으로 6개 번호를 선택합니다.
+- **AI 머신러닝 추출**
+  - **모델명**: Random Forest Classifier ensemble
+  - **학습법**: 최근 회차 윈도우에서 번호별 출현 빈도, 최근 미출현 간격, 홀짝 비율, 번호합, 저/중/고 구간 분포, 연속번호 수, 보너스 겹침 등을 feature로 생성합니다.
+  - **학습 방식**: 번호 `1~45` 각각에 대해 “다음 회차 포함 여부”를 예측하는 이진 Random Forest 분류기를 학습합니다.
+  - **추출 방식**: 번호별 포함 확률을 계산한 뒤 상위 후보군에서 가중 랜덤 샘플링으로 6개 번호를 선택합니다.
+
 ---
 
 ## 🔧 Customization

@@ -14,6 +14,8 @@ import { fetchDraws, saveDraw, fetchLottoHistoryAll, deleteDraws, LottoRow, Draw
 import { useNav } from '@/components/NavContext';
 import SyncPanel from '@/components/SyncPanel';
 import AiLstmPanel from '@/components/AiLstmPanel';
+import AiRandomForestPanel from '@/components/AiRandomForestPanel';
+import StatBasedPanel from '@/components/StatBasedPanel';
 
 const DrawList = dynamic(() => import('@/components/DrawList'), { ssr: false });
 const CompareView = dynamic(() => import('@/components/CompareView'), { ssr: false });
@@ -47,8 +49,11 @@ export default function Page() {
   const isMdOnly = useMediaQuery(theme.breakpoints.between('sm', 'md'));
   const ballSize = isXs ? 22 : isMdOnly ? 28 : 36;
   const isRandomSection = section === '난수 추출';
+  const isStatSection = section === '통계기반 추출';
   const isAiSection = section === 'AI 딥러닝 추출';
-  const isExtractionSection = isRandomSection || isAiSection;
+  const isAiMlSection = section === 'AI 머신러닝 추출';
+  const isExtractionSection = isRandomSection || isStatSection || isAiSection || isAiMlSection;
+  const loadingMessage = section === '당첨번호보기' ? '당첨번호 가져오는 중....' : '불러오는 중....';
 
   React.useEffect(() => {
     (async () => {
@@ -194,6 +199,73 @@ export default function Page() {
             </Stack>
           )}
 
+          {isStatSection && (
+            <Stack spacing={1.5}>
+              <StatBasedPanel
+                history={history}
+                ballSize={ballSize}
+                onGenerated={async (numbers) => {
+                  const row = await saveDraw(numbers);
+                  setDraws((prev) => [row, ...prev]);
+                  setSelected(row);
+                }}
+              />
+
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                justifyContent="space-between"
+                alignItems={{ xs: 'stretch', sm: 'center' }}
+                spacing={1}
+              >
+                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>통계 추출 이력</Typography>
+              </Stack>
+
+              <ButtonGroup
+                variant="outlined"
+                size="small"
+                sx={{
+                  alignSelf: 'flex-start',
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  flexWrap: 'wrap',
+                  '& .MuiButton-root': {
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    px: 1.5,
+                    gap: 1,
+                    borderColor: 'divider',
+                  },
+                }}
+              >
+                <Button onClick={selectAll} startIcon={<SelectAllIcon />}>전체 선택</Button>
+                <Button onClick={clearAll} startIcon={<IndeterminateCheckBoxOutlinedIcon />}>선택 해제</Button>
+                <Button
+                  color="error"
+                  onClick={removeSelected}
+                  startIcon={<DeleteSweepIcon />}
+                  sx={{
+                    bgcolor: (t) => t.palette.mode === 'light' ? 'error.50' : 'rgba(244,67,54,.10)',
+                    '&:hover': {
+                      bgcolor: (t) => t.palette.mode === 'light' ? 'error.100' : 'rgba(244,67,54,.18)',
+                    },
+                  }}
+                >
+                  선택 삭제
+                </Button>
+              </ButtonGroup>
+
+              <DrawList
+                ballSize={ballSize}
+                draws={draws}
+                selectedId={selected?.id ?? null}
+                onSelect={(r) => setSelected(r)}
+                checkedIds={checked}
+                onToggleCheck={toggleCheck}
+                onDeleteOne={removeOne}
+              />
+            </Stack>
+          )}
+
           {isAiSection && (
             <Stack spacing={1.5}>
               <AiLstmPanel
@@ -259,8 +331,100 @@ export default function Page() {
             </Stack>
           )}
 
-          <Backdrop open={loadingView} sx={{ position: 'absolute', inset: 0, color: '#fff', zIndex: (t) => t.zIndex.modal + 1 }}>
-            <CircularProgress />
+          {isAiMlSection && (
+            <Stack spacing={1.5}>
+              <AiRandomForestPanel
+                ballSize={ballSize}
+                onGenerated={(row) => {
+                  setDraws((prev) => [row, ...prev]);
+                  setSelected(row);
+                }}
+              />
+
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                justifyContent="space-between"
+                alignItems={{ xs: 'stretch', sm: 'center' }}
+                spacing={1}
+              >
+                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>AI 추출 이력</Typography>
+              </Stack>
+
+              <ButtonGroup
+                variant="outlined"
+                size="small"
+                sx={{
+                  alignSelf: 'flex-start',
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  flexWrap: 'wrap',
+                  '& .MuiButton-root': {
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    px: 1.5,
+                    gap: 1,
+                    borderColor: 'divider',
+                  },
+                }}
+              >
+                <Button onClick={selectAll} startIcon={<SelectAllIcon />}>전체 선택</Button>
+                <Button onClick={clearAll} startIcon={<IndeterminateCheckBoxOutlinedIcon />}>선택 해제</Button>
+                <Button
+                  color="error"
+                  onClick={removeSelected}
+                  startIcon={<DeleteSweepIcon />}
+                  sx={{
+                    bgcolor: (t) => t.palette.mode === 'light' ? 'error.50' : 'rgba(244,67,54,.10)',
+                    '&:hover': {
+                      bgcolor: (t) => t.palette.mode === 'light' ? 'error.100' : 'rgba(244,67,54,.18)',
+                    },
+                  }}
+                >
+                  선택 삭제
+                </Button>
+              </ButtonGroup>
+
+              <DrawList
+                ballSize={ballSize}
+                draws={draws}
+                selectedId={selected?.id ?? null}
+                onSelect={(r) => setSelected(r)}
+                checkedIds={checked}
+                onToggleCheck={toggleCheck}
+                onDeleteOne={removeOne}
+              />
+            </Stack>
+          )}
+
+          <Backdrop
+            open={loadingView}
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: (t) => t.zIndex.modal + 1,
+              color: 'text.primary',
+              bgcolor: (t) => t.palette.mode === 'dark'
+                ? 'rgba(10, 14, 24, 0.48)'
+                : 'rgba(255, 255, 255, 0.62)',
+              backdropFilter: 'blur(3px)',
+            }}
+          >
+            <Stack spacing={1.5} alignItems="center">
+              <CircularProgress color="primary" />
+              <Typography
+                variant="body1"
+                sx={{
+                  fontWeight: 700,
+                  color: 'text.primary',
+                  textAlign: 'center',
+                  textShadow: (t) => t.palette.mode === 'dark'
+                    ? '0 1px 2px rgba(0,0,0,0.35)'
+                    : 'none',
+                }}
+              >
+                {loadingMessage}
+              </Typography>
+            </Stack>
           </Backdrop>
         </Paper>
       </Grid>

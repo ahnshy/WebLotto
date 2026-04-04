@@ -24,7 +24,9 @@ import BubbleChartIcon from '@mui/icons-material/BubbleChart';
 import CasinoIcon from '@mui/icons-material/Casino';
 import CloudSyncIcon from '@mui/icons-material/CloudSync';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import HubIcon from '@mui/icons-material/Hub';
 import PsychologyAltIcon from '@mui/icons-material/PsychologyAlt';
+import QueryStatsIcon from '@mui/icons-material/QueryStats';
 import Image from 'next/image';
 import { useNav } from './NavContext';
 
@@ -71,7 +73,7 @@ export default function Sidebar({
 
     const menuItemBorderRadius = 10;
 
-    const selectSection = (nextSection: '당첨번호보기' | '당첨 패턴 분석' | '난수 추출' | 'AI 딥러닝 추출' | '동기화') => {
+    const selectSection = (nextSection: '당첨번호보기' | '당첨 패턴 분석' | '난수 추출' | '통계기반 추출' | 'AI 딥러닝 추출' | 'AI 머신러닝 추출' | '동기화') => {
         setSection(nextSection);
         if (!isMdUp) onClose();
     };
@@ -356,6 +358,32 @@ export default function Sidebar({
                         </ListItemButton>
 
                         <ListItemButton
+                            selected={section === '통계기반 추출'}
+                            sx={{
+                                borderRadius: menuItemBorderRadius,
+                                mx: 0.5,
+                                mb: 0.5,
+                                pl: collapsed ? 1.5 : 3,
+                                py: 0.875,
+                                bgcolor: section === '통계기반 추출' ? menuItemSelectedBg : 'transparent',
+                                '&:hover': {
+                                    bgcolor: menuItemHoverBg,
+                                },
+                                '&.Mui-selected': {
+                                    bgcolor: menuItemSelectedBg,
+                                    '&:hover': { bgcolor: menuItemSelectedBg },
+                                },
+                                transition: 'all 0.2s ease',
+                            }}
+                            onClick={() => selectSection('통계기반 추출')}
+                        >
+                            <ListItemIcon sx={{ minWidth: 40 }}>
+                                <QueryStatsIcon sx={{ fontSize: '1.1rem' }} />
+                            </ListItemIcon>
+                            <ItemText primary="통계기반 추출" />
+                        </ListItemButton>
+
+                        <ListItemButton
                             selected={section === 'AI 딥러닝 추출'}
                             sx={{
                                 borderRadius: menuItemBorderRadius,
@@ -379,6 +407,32 @@ export default function Sidebar({
                                 <PsychologyAltIcon sx={{ fontSize: '1.1rem' }} />
                             </ListItemIcon>
                             <ItemText primary="AI 딥러닝 추출" />
+                        </ListItemButton>
+
+                        <ListItemButton
+                            selected={section === 'AI 머신러닝 추출'}
+                            sx={{
+                                borderRadius: menuItemBorderRadius,
+                                mx: 0.5,
+                                mb: 0.5,
+                                pl: collapsed ? 1.5 : 3,
+                                py: 0.875,
+                                bgcolor: section === 'AI 머신러닝 추출' ? menuItemSelectedBg : 'transparent',
+                                '&:hover': {
+                                    bgcolor: menuItemHoverBg,
+                                },
+                                '&.Mui-selected': {
+                                    bgcolor: menuItemSelectedBg,
+                                    '&:hover': { bgcolor: menuItemSelectedBg },
+                                },
+                                transition: 'all 0.2s ease',
+                            }}
+                            onClick={() => selectSection('AI 머신러닝 추출')}
+                        >
+                            <ListItemIcon sx={{ minWidth: 40 }}>
+                                <HubIcon sx={{ fontSize: '1.1rem' }} />
+                            </ListItemIcon>
+                            <ItemText primary="AI 머신러닝 추출" />
                         </ListItemButton>
                     </List>
                 </Collapse>

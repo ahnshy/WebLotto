@@ -1,7 +1,7 @@
 'use client';
 import React, { createContext, useContext, useState } from 'react';
 
-export type Section = '당첨번호보기' | '당첨 패턴 분석' | '난수 추출' | 'AI 딥러닝 추출' | '동기화';
+export type Section = '당첨번호보기' | '당첨 패턴 분석' | '난수 추출' | '통계기반 추출' | 'AI 딥러닝 추출' | 'AI 머신러닝 추출' | '동기화';
 
 type Ctx = {
   section: Section;
