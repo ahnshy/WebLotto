@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabaseClient';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import type { DrawRow, LottoRow } from '@/app/actions';
+import type { DrawMethod, DrawRow, LottoRow } from '@/app/actions';
 import {
   disposePreparedLstm,
   predictWithPreparedLstm,
@@ -34,6 +34,25 @@ type LottoAiCache = {
 
 declare global {
   var __lottoAiCache__: LottoAiCache | undefined;
+}
+
+function isExtractionMethodColumnError(error: unknown) {
+  const message = getErrorText(error);
+  return message.includes('extraction_method');
+}
+
+function isExtractionTagsColumnError(error: unknown) {
+  const message = getErrorText(error);
+  return message.includes('extraction_tags');
+}
+
+function getErrorText(error: unknown) {
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object') {
+    const candidate = error as { message?: string; details?: string; hint?: string; code?: string };
+    return [candidate.code, candidate.message, candidate.details, candidate.hint].filter(Boolean).join(' ');
+  }
+  return String(error ?? '');
 }
 
 function getCache(): LottoAiCache {
@@ -79,10 +98,40 @@ export async function fetchLottoHistoryAll(): Promise<LottoRow[]> {
   return rows;
 }
 
-export async function saveDraw(numbers: number[]): Promise<DrawRow> {
-  const { data, error } = await db.from('draws').insert({ numbers }).select().single();
-  if (error) throw error;
-  return data as DrawRow;
+export async function saveDraw(
+  numbers: number[],
+  extractionMethod: DrawMethod,
+  extractionTags: string[] = []
+): Promise<DrawRow> {
+  const primary = await db
+    .from('draws')
+    .insert({ numbers, extraction_method: extractionMethod, extraction_tags: extractionTags })
+    .select()
+    .single();
+
+  if (!primary.error) return primary.data as DrawRow;
+
+  if (!(isExtractionMethodColumnError(primary.error) || isExtractionTagsColumnError(primary.error))) {
+    throw primary.error;
+  }
+
+  const methodOnly = await db
+    .from('draws')
+    .insert({ numbers, extraction_method: extractionMethod })
+    .select()
+    .single();
+
+  if (!methodOnly.error) return methodOnly.data as DrawRow;
+  if (!isExtractionMethodColumnError(methodOnly.error)) throw methodOnly.error;
+
+  const fallback = await db
+    .from('draws')
+    .insert({ numbers })
+    .select()
+    .single();
+
+  if (fallback.error) throw fallback.error;
+  return fallback.data as DrawRow;
 }
 
 export async function ensurePreparedLstmModel(force = false) {
