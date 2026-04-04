@@ -16,7 +16,7 @@ import TuneIcon from '@mui/icons-material/Tune';
 import NumberBall from './NumberBall';
 import type { LottoRow } from '@/app/actions';
 
-type StatOption =
+export type StatOption =
   | 'hot_frequency'
   | 'cold_missing'
   | 'range_ratio'
@@ -24,7 +24,7 @@ type StatOption =
   | 'hot_focus'
   | 'cold_focus';
 
-const OPTION_LABELS: Record<StatOption, { title: string; description: string }> = {
+export const STAT_OPTION_LABELS: Record<StatOption, { title: string; description: string }> = {
   hot_frequency: {
     title: '빈출 번호',
     description: '전체 누적 당첨 이력에서 자주 나온 번호 가중치 반영',
@@ -199,7 +199,7 @@ export default function StatBasedPanel({
 }: {
   history: LottoRow[];
   ballSize: number;
-  onGenerated: (numbers: number[]) => Promise<void>;
+  onGenerated: (numbers: number[], options: StatOption[]) => Promise<void>;
 }) {
   const [selectedOptions, setSelectedOptions] = React.useState<StatOption[]>(DEFAULT_OPTIONS);
   const [running, setRunning] = React.useState(false);
@@ -225,7 +225,7 @@ export default function StatBasedPanel({
 
     try {
       const next = buildPick(history, selectedOptions);
-      await onGenerated(next.numbers);
+      await onGenerated(next.numbers, selectedOptions);
       setResult(next);
     } catch (e) {
       setError(String(e));
@@ -264,7 +264,7 @@ export default function StatBasedPanel({
             </Alert>
 
             <FormGroup>
-              {Object.entries(OPTION_LABELS).map(([key, value]) => (
+              {Object.entries(STAT_OPTION_LABELS).map(([key, value]) => (
                 <FormControlLabel
                   key={key}
                   control={(
@@ -297,7 +297,7 @@ export default function StatBasedPanel({
                 </Stack>
 
                 <Typography variant="body2" color="text.secondary">
-                  선택 기준: {selectedOptions.map((item) => OPTION_LABELS[item].title).join(', ')}
+                  선택 기준: {selectedOptions.map((item) => STAT_OPTION_LABELS[item].title).join(', ')}
                 </Typography>
 
                 <Typography variant="body2" color="text.secondary">
@@ -305,7 +305,7 @@ export default function StatBasedPanel({
                 </Typography>
 
                 <Typography variant="caption" color="text.secondary">
-                  {`${result.stats.rounds.toLocaleString()}회차 누적 통계 사용 · ${result.stats.currentMonth}월 다수출현 통계 반영`}
+                  {`${result.stats.rounds.toLocaleString()}회차 누적 통계 사용, ${result.stats.currentMonth}월 강세 패턴 반영`}
                 </Typography>
               </Stack>
             )}
