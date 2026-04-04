@@ -21,7 +21,7 @@ export async function GET() {
 export async function POST() {
   try {
     const prediction = await generateLstmPrediction();
-    const draw = await saveDraw(prediction.numbers);
+    const draw = await saveDraw(prediction.numbers, 'lstm');
 
     return NextResponse.json({
       success: true,
