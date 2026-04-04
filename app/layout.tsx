@@ -2,6 +2,7 @@ import './globals.css';
 import ThemeProviderRoot from './theme/ThemeProviderRoot';
 import AppShell from '@/components/AppShell';
 import { NavProvider } from '@/components/NavContext';
+import AuthProvider from '@/components/AuthContext';
 
 export const metadata = {
   title: 'WebLotto',
@@ -19,7 +20,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko"><body>
       <ThemeProviderRoot>
-        <NavProvider><AppShell>{children}</AppShell></NavProvider>
+        <AuthProvider>
+          <NavProvider><AppShell>{children}</AppShell></NavProvider>
+        </AuthProvider>
       </ThemeProviderRoot>
     </body></html>
   );
