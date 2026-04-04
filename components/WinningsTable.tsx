@@ -26,7 +26,8 @@ import type { LottoRow } from '@/app/actions';
 
 const PAGE_SIZE = 50;
 const BALL_SIZE = 24;
-const FEATURED_BALL_SIZE = 68;
+const FEATURED_BALL_MIN_SIZE = 24;
+const FEATURED_BALL_MAX_SIZE = 68;
 const RECENT_DRAW_WINDOW_DAYS = 7;
 
 const NoWrapCell = styled(TableCell)({
@@ -129,6 +130,8 @@ function RowCard({ row }: { row: LottoRow }) {
 export default function WinningsTable({ rows }: { rows: LottoRow[] }) {
   const theme = useTheme();
   const isResponsiveCard = useMediaQuery(theme.breakpoints.down('lg'));
+  const featuredRowRef = React.useRef<HTMLDivElement | null>(null);
+  const [featuredBallSize, setFeaturedBallSize] = React.useState(FEATURED_BALL_MAX_SIZE);
 
   const [page, setPage] = React.useState(1);
   const [startInput, setStartInput] = React.useState('');
@@ -152,6 +155,25 @@ export default function WinningsTable({ rows }: { rows: LottoRow[] }) {
     const startIndex = (page - 1) * PAGE_SIZE;
     return filtered.slice(startIndex, startIndex + PAGE_SIZE);
   }, [filtered, page]);
+
+  React.useEffect(() => {
+    const el = featuredRowRef.current;
+    if (!el) return;
+
+    const updateSize = () => {
+      const width = el.clientWidth;
+      if (!width) return;
+      const totalGap = 7 * 10;
+      const plusWidth = 28;
+      const nextSize = Math.floor((width - totalGap - plusWidth) / 7);
+      setFeaturedBallSize(Math.max(FEATURED_BALL_MIN_SIZE, Math.min(FEATURED_BALL_MAX_SIZE, nextSize)));
+    };
+
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [showRecentWinner, latestRow]);
 
   const handleSearch = () => {
     const start = parseInt(startInput, 10);
@@ -234,12 +256,29 @@ export default function WinningsTable({ rows }: { rows: LottoRow[] }) {
                 <Typography variant="h6" sx={{ fontWeight: 800, color: '#075985', textAlign: 'center' }}>
                   이번주 당첨번호
                 </Typography>
-                <Stack direction="row" spacing={1.25} justifyContent="center" alignItems="center" sx={{ flexWrap: 'wrap' }}>
+                <Stack
+                  ref={featuredRowRef}
+                  direction="row"
+                  spacing={1.25}
+                  justifyContent="center"
+                  alignItems="center"
+                  sx={{ width: '100%', flexWrap: 'nowrap' }}
+                >
                   {[latestRow.n1, latestRow.n2, latestRow.n3, latestRow.n4, latestRow.n5, latestRow.n6].map((n) => (
-                    <NumberBall key={`featured-${n}`} n={n} size={FEATURED_BALL_SIZE} mr={0} />
+                    <NumberBall key={`featured-${n}`} n={n} size={featuredBallSize} mr={0} />
                   ))}
-                  <Typography sx={{ fontSize: 32, fontWeight: 700, color: '#0369a1', px: 0.5 }}>+</Typography>
-                  <NumberBall n={latestRow.bonus} size={FEATURED_BALL_SIZE} mr={0} />
+                  <Typography
+                    sx={{
+                      fontSize: Math.max(16, Math.round(featuredBallSize * 0.45)),
+                      fontWeight: 700,
+                      color: '#0369a1',
+                      px: 0.25,
+                      flexShrink: 0,
+                    }}
+                  >
+                    +
+                  </Typography>
+                  <NumberBall n={latestRow.bonus} size={featuredBallSize} mr={0} />
                 </Stack>
                 <Stack
                   direction={{ xs: 'column', md: 'row' }}
