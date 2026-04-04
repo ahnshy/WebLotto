@@ -5,9 +5,6 @@ import {
   useMediaQuery, Backdrop, CircularProgress
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import SelectAllIcon from '@mui/icons-material/SelectAll';
-import IndeterminateCheckBoxOutlinedIcon from '@mui/icons-material/IndeterminateCheckBoxOutlined';
-import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import dynamic from 'next/dynamic';
 import { fetchDraws, saveDraw, fetchLottoHistoryAll, deleteDraws, LottoRow, DrawRow } from './actions';
@@ -15,7 +12,11 @@ import { useNav } from '@/components/NavContext';
 import SyncPanel from '@/components/SyncPanel';
 import AiLstmPanel from '@/components/AiLstmPanel';
 import AiRandomForestPanel from '@/components/AiRandomForestPanel';
-import StatBasedPanel from '@/components/StatBasedPanel';
+import StatBasedPanel, { STAT_OPTION_LABELS, StatOption } from '@/components/StatBasedPanel';
+import PatternBasedPanel from '@/components/PatternBasedPanel';
+import MockDrawPanel from '@/components/MockDrawPanel';
+import DrawHistoryActions from '@/components/DrawHistoryActions';
+import { printLottoSlip } from '@/components/lottoPrint';
 
 const DrawList = dynamic(() => import('@/components/DrawList'), { ssr: false });
 const CompareView = dynamic(() => import('@/components/CompareView'), { ssr: false });
@@ -42,6 +43,7 @@ export default function Page() {
   const [history, setHistory] = React.useState<LottoRow[]>([]);
   const [checked, setChecked] = React.useState<Set<string>>(new Set());
   const [loadingView, setLoadingView] = React.useState(false);
+  const [aiModelInitializing, setAiModelInitializing] = React.useState(false);
   const { section } = useNav();
 
   const theme = useTheme();
@@ -50,9 +52,11 @@ export default function Page() {
   const ballSize = isXs ? 22 : isMdOnly ? 28 : 36;
   const isRandomSection = section === '난수 추출';
   const isStatSection = section === '통계기반 추출';
+  const isPatternSection = section === '패턴기반 추출';
   const isAiSection = section === 'AI 딥러닝 추출';
   const isAiMlSection = section === 'AI 머신러닝 추출';
-  const isExtractionSection = isRandomSection || isStatSection || isAiSection || isAiMlSection;
+  const isSimulationSection = section === '모의추첨';
+  const isExtractionSection = isRandomSection || isStatSection || isPatternSection || isAiSection || isAiMlSection;
   const loadingMessage = section === '당첨번호보기' ? '당첨번호 가져오는 중....' : '불러오는 중....';
 
   React.useEffect(() => {
@@ -87,7 +91,7 @@ export default function Page() {
 
   const onGenerate = async () => {
     const g = generate();
-    const row = await saveDraw(g);
+    const row = await saveDraw(g, 'random');
     setDraws((prev) => [row, ...prev]);
     setSelected(row);
   };
@@ -100,6 +104,22 @@ export default function Page() {
 
   const selectAll = () => setChecked(new Set(draws.map((d) => d.id)));
   const clearAll = () => setChecked(new Set());
+  const checkedDraws = React.useMemo(
+    () => draws.filter((draw) => checked.has(draw.id)),
+    [draws, checked]
+  );
+
+  const handlePrintSelected = () => {
+    if (checkedDraws.length === 0) {
+      window.alert('출력할 번호를 1개 이상 선택해 주세요.');
+      return;
+    }
+    if (checkedDraws.length > 5) {
+      window.alert('최대 5개 번호까지만 출력할 수 있습니다.');
+      return;
+    }
+    printLottoSlip(checkedDraws);
+  };
 
   const removeSelected = async () => {
     if (checked.size === 0) return;
@@ -153,39 +173,12 @@ export default function Page() {
                 </Button>
               </Stack>
 
-              <ButtonGroup
-                variant="outlined"
-                size="small"
-                sx={{
-                  alignSelf: 'flex-start',
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  flexWrap: 'wrap',
-                  '& .MuiButton-root': {
-                    textTransform: 'none',
-                    fontWeight: 700,
-                    px: 1.5,
-                    gap: 1,
-                    borderColor: 'divider',
-                  },
-                }}
-              >
-                <Button onClick={selectAll} startIcon={<SelectAllIcon />}>전체 선택</Button>
-                <Button onClick={clearAll} startIcon={<IndeterminateCheckBoxOutlinedIcon />}>선택 해제</Button>
-                <Button
-                  color="error"
-                  onClick={removeSelected}
-                  startIcon={<DeleteSweepIcon />}
-                  sx={{
-                    bgcolor: (t) => t.palette.mode === 'light' ? 'error.50' : 'rgba(244,67,54,.10)',
-                    '&:hover': {
-                      bgcolor: (t) => t.palette.mode === 'light' ? 'error.100' : 'rgba(244,67,54,.18)',
-                    },
-                  }}
-                >
-                  선택 삭제
-                </Button>
-              </ButtonGroup>
+              <DrawHistoryActions
+                onSelectAll={selectAll}
+                onClearAll={clearAll}
+                onRemoveSelected={removeSelected}
+                onPrintSelected={handlePrintSelected}
+              />
 
               <DrawList
                 ballSize={ballSize}
@@ -204,8 +197,12 @@ export default function Page() {
               <StatBasedPanel
                 history={history}
                 ballSize={ballSize}
-                onGenerated={async (numbers) => {
-                  const row = await saveDraw(numbers);
+                onGenerated={async (numbers, options) => {
+                  const row = await saveDraw(
+                    numbers,
+                    'stat',
+                    options.map((option: StatOption) => STAT_OPTION_LABELS[option].title)
+                  );
                   setDraws((prev) => [row, ...prev]);
                   setSelected(row);
                 }}
@@ -220,39 +217,52 @@ export default function Page() {
                 <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>통계 추출 이력</Typography>
               </Stack>
 
-              <ButtonGroup
-                variant="outlined"
-                size="small"
-                sx={{
-                  alignSelf: 'flex-start',
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  flexWrap: 'wrap',
-                  '& .MuiButton-root': {
-                    textTransform: 'none',
-                    fontWeight: 700,
-                    px: 1.5,
-                    gap: 1,
-                    borderColor: 'divider',
-                  },
+              <DrawHistoryActions
+                onSelectAll={selectAll}
+                onClearAll={clearAll}
+                onRemoveSelected={removeSelected}
+                onPrintSelected={handlePrintSelected}
+              />
+
+              <DrawList
+                ballSize={ballSize}
+                draws={draws}
+                selectedId={selected?.id ?? null}
+                onSelect={(r) => setSelected(r)}
+                checkedIds={checked}
+                onToggleCheck={toggleCheck}
+                onDeleteOne={removeOne}
+              />
+            </Stack>
+          )}
+
+          {isPatternSection && (
+            <Stack spacing={1.5}>
+              <PatternBasedPanel
+                history={history}
+                ballSize={ballSize}
+                onGenerated={async (numbers) => {
+                  const row = await saveDraw(numbers, 'pattern');
+                  setDraws((prev) => [row, ...prev]);
+                  setSelected(row);
                 }}
+              />
+
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                justifyContent="space-between"
+                alignItems={{ xs: 'stretch', sm: 'center' }}
+                spacing={1}
               >
-                <Button onClick={selectAll} startIcon={<SelectAllIcon />}>전체 선택</Button>
-                <Button onClick={clearAll} startIcon={<IndeterminateCheckBoxOutlinedIcon />}>선택 해제</Button>
-                <Button
-                  color="error"
-                  onClick={removeSelected}
-                  startIcon={<DeleteSweepIcon />}
-                  sx={{
-                    bgcolor: (t) => t.palette.mode === 'light' ? 'error.50' : 'rgba(244,67,54,.10)',
-                    '&:hover': {
-                      bgcolor: (t) => t.palette.mode === 'light' ? 'error.100' : 'rgba(244,67,54,.18)',
-                    },
-                  }}
-                >
-                  선택 삭제
-                </Button>
-              </ButtonGroup>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>패턴 추출 이력</Typography>
+              </Stack>
+
+              <DrawHistoryActions
+                onSelectAll={selectAll}
+                onClearAll={clearAll}
+                onRemoveSelected={removeSelected}
+                onPrintSelected={handlePrintSelected}
+              />
 
               <DrawList
                 ballSize={ballSize}
@@ -274,6 +284,7 @@ export default function Page() {
                   setDraws((prev) => [row, ...prev]);
                   setSelected(row);
                 }}
+                onWarmStateChange={setAiModelInitializing}
               />
 
               <Stack
@@ -285,39 +296,12 @@ export default function Page() {
                 <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>AI 추출 이력</Typography>
               </Stack>
 
-              <ButtonGroup
-                variant="outlined"
-                size="small"
-                sx={{
-                  alignSelf: 'flex-start',
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  flexWrap: 'wrap',
-                  '& .MuiButton-root': {
-                    textTransform: 'none',
-                    fontWeight: 700,
-                    px: 1.5,
-                    gap: 1,
-                    borderColor: 'divider',
-                  },
-                }}
-              >
-                <Button onClick={selectAll} startIcon={<SelectAllIcon />}>전체 선택</Button>
-                <Button onClick={clearAll} startIcon={<IndeterminateCheckBoxOutlinedIcon />}>선택 해제</Button>
-                <Button
-                  color="error"
-                  onClick={removeSelected}
-                  startIcon={<DeleteSweepIcon />}
-                  sx={{
-                    bgcolor: (t) => t.palette.mode === 'light' ? 'error.50' : 'rgba(244,67,54,.10)',
-                    '&:hover': {
-                      bgcolor: (t) => t.palette.mode === 'light' ? 'error.100' : 'rgba(244,67,54,.18)',
-                    },
-                  }}
-                >
-                  선택 삭제
-                </Button>
-              </ButtonGroup>
+              <DrawHistoryActions
+                onSelectAll={selectAll}
+                onClearAll={clearAll}
+                onRemoveSelected={removeSelected}
+                onPrintSelected={handlePrintSelected}
+              />
 
               <DrawList
                 ballSize={ballSize}
@@ -339,6 +323,7 @@ export default function Page() {
                   setDraws((prev) => [row, ...prev]);
                   setSelected(row);
                 }}
+                onWarmStateChange={setAiModelInitializing}
               />
 
               <Stack
@@ -350,39 +335,12 @@ export default function Page() {
                 <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>AI 추출 이력</Typography>
               </Stack>
 
-              <ButtonGroup
-                variant="outlined"
-                size="small"
-                sx={{
-                  alignSelf: 'flex-start',
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  flexWrap: 'wrap',
-                  '& .MuiButton-root': {
-                    textTransform: 'none',
-                    fontWeight: 700,
-                    px: 1.5,
-                    gap: 1,
-                    borderColor: 'divider',
-                  },
-                }}
-              >
-                <Button onClick={selectAll} startIcon={<SelectAllIcon />}>전체 선택</Button>
-                <Button onClick={clearAll} startIcon={<IndeterminateCheckBoxOutlinedIcon />}>선택 해제</Button>
-                <Button
-                  color="error"
-                  onClick={removeSelected}
-                  startIcon={<DeleteSweepIcon />}
-                  sx={{
-                    bgcolor: (t) => t.palette.mode === 'light' ? 'error.50' : 'rgba(244,67,54,.10)',
-                    '&:hover': {
-                      bgcolor: (t) => t.palette.mode === 'light' ? 'error.100' : 'rgba(244,67,54,.18)',
-                    },
-                  }}
-                >
-                  선택 삭제
-                </Button>
-              </ButtonGroup>
+              <DrawHistoryActions
+                onSelectAll={selectAll}
+                onClearAll={clearAll}
+                onRemoveSelected={removeSelected}
+                onPrintSelected={handlePrintSelected}
+              />
 
               <DrawList
                 ballSize={ballSize}
@@ -396,8 +354,10 @@ export default function Page() {
             </Stack>
           )}
 
+          {isSimulationSection && <MockDrawPanel />}
+
           <Backdrop
-            open={loadingView}
+            open={loadingView || ((isAiSection || isAiMlSection) && aiModelInitializing)}
             sx={{
               position: 'absolute',
               inset: 0,
@@ -422,7 +382,9 @@ export default function Page() {
                     : 'none',
                 }}
               >
-                {loadingMessage}
+                {(isAiSection || isAiMlSection) && aiModelInitializing
+                  ? 'AI Model을 초기화 중입니다...'
+                  : loadingMessage}
               </Typography>
             </Stack>
           </Backdrop>
