@@ -44,15 +44,21 @@ type ModelStatus = {
 export default function AiLstmPanel({
   ballSize,
   onGenerated,
+  onWarmStateChange,
 }: {
   ballSize: number;
   onGenerated: (row: DrawRow) => void;
+  onWarmStateChange?: (warming: boolean) => void;
 }) {
   const [running, setRunning] = React.useState(false);
   const [warming, setWarming] = React.useState(true);
   const [status, setStatus] = React.useState<ModelStatus | null>(null);
   const [error, setError] = React.useState('');
   const [result, setResult] = React.useState<PredictionResponse | null>(null);
+
+  React.useEffect(() => {
+    onWarmStateChange?.(warming);
+  }, [warming, onWarmStateChange]);
 
   React.useEffect(() => {
     let active = true;
