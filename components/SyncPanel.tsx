@@ -11,10 +11,12 @@ import {
   LinearProgress,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
+import { useAuth } from './AuthContext';
 
 const SYNC_BATCH_SIZE = 100;
 
@@ -97,6 +99,7 @@ async function syncRangeInBatches(
 }
 
 export default function SyncPanel() {
+  const { email, isAdmin, loading: authLoading } = useAuth();
   const [start, setStart] = React.useState(1);
   const [end, setEnd] = React.useState<number | null>(null);
   const [progress, setProgress] = React.useState(0);
@@ -105,6 +108,8 @@ export default function SyncPanel() {
   const [message, setMessage] = React.useState('최신 회차를 확인하는 중입니다.');
   const [syncResult, setSyncResult] = React.useState<SyncSummary | null>(null);
   const [currentBatch, setCurrentBatch] = React.useState<{ start: number; end: number } | null>(null);
+  const syncDisabled = running || !end || status === 'loading' || authLoading || !isAdmin;
+  const adminTooltip = '관리자만 가능한 기능입니다.';
 
   React.useEffect(() => {
     let alive = true;
@@ -226,10 +231,20 @@ export default function SyncPanel() {
             sx={{ width: 120 }}
             disabled={running}
           />
-          <Button variant="contained" onClick={onRun} disabled={running || !end || status === 'loading'} sx={{ mt: 0.5 }}>
-            {running ? '동기화 중...' : '동기화 시작'}
-          </Button>
+          <Tooltip title={!isAdmin ? adminTooltip : ''} disableHoverListener={isAdmin}>
+            <span>
+              <Button variant="contained" onClick={onRun} disabled={syncDisabled} sx={{ mt: 0.5 }}>
+                {running ? '동기화 중...' : '동기화 시작'}
+              </Button>
+            </span>
+          </Tooltip>
         </Stack>
+
+        {!authLoading && !isAdmin && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {email ? `${email} 계정은 동기화 권한이 없습니다.` : '관리자 계정으로 로그인해야 동기화를 사용할 수 있습니다.'}
+          </Alert>
+        )}
 
         {(running || progress > 0) && (
           <Box sx={{ mt: 2 }}>
