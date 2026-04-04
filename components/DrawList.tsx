@@ -1,5 +1,11 @@
 'use client';
+
 import {
+  alpha,
+  useTheme,
+} from '@mui/material/styles';
+import {
+  Box,
   Checkbox,
   IconButton,
   List,
@@ -11,10 +17,18 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
 import DeleteIcon from '@mui/icons-material/Delete';
 import NumberBall from './NumberBall';
 import type { DrawRow } from '@/app/actions';
+
+const METHOD_LABELS: Record<string, string> = {
+  random: '난수',
+  stat: '통계',
+  pattern: '패턴',
+  lstm: '딥러닝',
+  random_forest: '머신러닝',
+  unknown: '미분류',
+};
 
 export default function DrawList({
   draws,
@@ -35,9 +49,7 @@ export default function DrawList({
 }) {
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
-  // 작은 화면에서 볼 크기 더 축소
   const size = isXs ? Math.min(ballSize, 20) : ballSize;
-  // 볼 간격: 작은 화면에서 더 촘촘하게
   const gap = isXs ? 0.25 : 0.5;
   const isNight = theme.palette.background.paper === '#151b2f';
   const scrollbarThumb = isNight
@@ -82,57 +94,100 @@ export default function DrawList({
         },
       }}
     >
-      {draws.map((d) => (
+      {draws.map((draw) => (
         <ListItem
-          key={d.id}
+          key={draw.id}
           disablePadding
           disableGutters
           sx={{ overflowX: 'hidden' }}
         >
           <ListItemButton
-            selected={selectedId === d.id}
-            onClick={() => onSelect(d)}
+            selected={selectedId === draw.id}
+            onClick={() => onSelect(draw)}
             sx={{ px: 1, py: 0.5, minWidth: 0 }}
           >
-            {/* 체크박스 */}
             <ListItemIcon
-              onClick={(e) => { e.stopPropagation(); onToggleCheck(d.id); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleCheck(draw.id);
+              }}
               sx={{ minWidth: 36 }}
             >
               <Checkbox
                 edge="start"
-                checked={checkedIds.has(d.id)}
+                checked={checkedIds.has(draw.id)}
                 tabIndex={-1}
                 disableRipple
                 size="small"
               />
             </ListItemIcon>
 
-            {/* 번호 + 날짜 */}
-            <Stack sx={{ flex: 1, minWidth: 0 }} spacing={0.25}>
+            <Stack sx={{ flex: 1, minWidth: 0 }} spacing={0.35}>
+              <Stack direction="row" alignItems="center" sx={{ flexWrap: 'wrap', gap: 0.5, minWidth: 0 }}>
+                <Box
+                  sx={{
+                    flexShrink: 0,
+                    px: 0.75,
+                    py: 0.2,
+                    borderRadius: 999,
+                    fontSize: '0.68rem',
+                    fontWeight: 800,
+                    lineHeight: 1.4,
+                    color: 'primary.main',
+                    bgcolor: (t) => alpha(t.palette.primary.main, t.palette.mode === 'dark' ? 0.2 : 0.1),
+                    border: (t) => `1px solid ${alpha(t.palette.primary.main, t.palette.mode === 'dark' ? 0.28 : 0.16)}`,
+                  }}
+                >
+                  {METHOD_LABELS[draw.extraction_method ?? 'unknown'] ?? '미분류'}
+                </Box>
+
+                {(draw.extraction_tags ?? []).map((tag) => (
+                  <Box
+                    key={`${draw.id}-${tag}`}
+                    sx={{
+                      flexShrink: 0,
+                      px: 0.7,
+                      py: 0.16,
+                      borderRadius: 999,
+                      fontSize: '0.66rem',
+                      fontWeight: 700,
+                      lineHeight: 1.35,
+                      color: 'text.secondary',
+                      bgcolor: (t) => alpha(t.palette.text.primary, t.palette.mode === 'dark' ? 0.14 : 0.06),
+                      border: (t) => `1px solid ${alpha(t.palette.text.primary, t.palette.mode === 'dark' ? 0.18 : 0.08)}`,
+                    }}
+                  >
+                    {tag}
+                  </Box>
+                ))}
+              </Stack>
+
               <Stack
                 direction="row"
                 alignItems="center"
-                sx={{ flexWrap: 'wrap', gap: gap, minWidth: 0 }}
+                sx={{ flexWrap: 'wrap', gap, minWidth: 0 }}
               >
-                {d.numbers.map((n) => (
-                  <NumberBall key={n} n={n} size={size} mr={0} />
+                {draw.numbers.map((number) => (
+                  <NumberBall key={number} n={number} size={size} mr={0} />
                 ))}
               </Stack>
+
               <Typography
                 variant="caption"
                 sx={{ opacity: 0.55, display: 'block', lineHeight: 1.2 }}
               >
-                {new Date(d.created_at).toLocaleString()}
+                {new Date(draw.created_at).toLocaleString()}
               </Typography>
             </Stack>
 
-            {/* 삭제 버튼 */}
-            <Tooltip title="이 항목 삭제">
+            <Tooltip title="항목 삭제">
               <IconButton
                 edge="end"
                 size="small"
-                onClick={(e) => { e.stopPropagation(); onDeleteOne(d.id); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteOne(draw.id);
+                }}
                 sx={{ ml: 0.5, flexShrink: 0 }}
               >
                 <DeleteIcon fontSize="small" />
