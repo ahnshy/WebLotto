@@ -1,15 +1,79 @@
 'use server';
 import { supabase } from '@/lib/supabaseClient';
-export type DrawRow = { id:string; numbers:number[]; created_at:string };
+export type DrawMethod =
+  | 'random'
+  | 'stat'
+  | 'pattern'
+  | 'lstm'
+  | 'random_forest'
+  | 'unknown';
+
+export type DrawRow = {
+  id: string;
+  numbers: number[];
+  created_at: string;
+  extraction_method?: DrawMethod | null;
+  extraction_tags?: string[] | null;
+};
 export type LottoRow = { round:number; draw_date:string; n1:number;n2:number;n3:number;n4:number;n5:number;n6:number; bonus:number; first_prize_winners?:number|null; first_prize_amount?:number|null };
+
+function isExtractionMethodColumnError(error: unknown) {
+  const message = getErrorText(error);
+  return message.includes('extraction_method');
+}
+
+function isExtractionTagsColumnError(error: unknown) {
+  const message = getErrorText(error);
+  return message.includes('extraction_tags');
+}
+
+function getErrorText(error: unknown) {
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object') {
+    const candidate = error as { message?: string; details?: string; hint?: string; code?: string };
+    return [candidate.code, candidate.message, candidate.details, candidate.hint].filter(Boolean).join(' ');
+  }
+  return String(error ?? '');
+}
 
 export async function fetchDraws(){
   const {data,error}=await supabase.from('draws').select('*').order('created_at',{ascending:false}).limit(200);
   if(error) throw error; return data as DrawRow[];
 }
-export async function saveDraw(numbers:number[]){
-  const {data,error}=await supabase.from('draws').insert({numbers}).select().single();
-  if(error) throw error; return data as DrawRow;
+export async function saveDraw(
+  numbers:number[],
+  extractionMethod: DrawMethod = 'unknown',
+  extractionTags: string[] = []
+){
+  const primary = await supabase
+    .from('draws')
+    .insert({numbers, extraction_method: extractionMethod, extraction_tags: extractionTags})
+    .select()
+    .single();
+
+  if (!primary.error) return primary.data as DrawRow;
+
+  if (!(isExtractionMethodColumnError(primary.error) || isExtractionTagsColumnError(primary.error))) {
+    throw primary.error;
+  }
+
+  const methodOnly = await supabase
+    .from('draws')
+    .insert({numbers, extraction_method: extractionMethod})
+    .select()
+    .single();
+
+  if (!methodOnly.error) return methodOnly.data as DrawRow;
+  if (!isExtractionMethodColumnError(methodOnly.error)) throw methodOnly.error;
+
+  const fallback = await supabase
+    .from('draws')
+    .insert({numbers})
+    .select()
+    .single();
+
+  if (fallback.error) throw fallback.error;
+  return fallback.data as DrawRow;
 }
 export async function deleteDraws(ids:string[]){
   if(!ids?.length) return {count:0};
