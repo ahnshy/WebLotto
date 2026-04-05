@@ -345,7 +345,7 @@ function createBalls(layout: MachineLayout): Ball[] {
       const distance = Math.sqrt(Math.random()) * layout.drumRadius * 0.72;
       const candidateX = layout.centerX + Math.cos(angle) * distance;
       const candidateY =
-        layout.centerY + Math.sin(angle) * distance + layout.drumRadius * 0.18;
+        layout.centerY + Math.sin(angle) * distance + layout.drumRadius * 0.08;
       const inside =
         Math.hypot(candidateX - layout.centerX, candidateY - layout.centerY) <
         layout.drumRadius - layout.ballRadius * 1.3;
@@ -647,57 +647,6 @@ function drawMachineScene(
   ctx.arc(layout.centerX, layout.centerY, layout.drumRadius, 0, Math.PI * 2);
   ctx.fillStyle = drumGradient;
   ctx.fill();
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(layout.centerX, layout.centerY, layout.drumRadius - 1, 0, Math.PI * 2);
-  ctx.clip();
-  ctx.translate(layout.centerX, layout.centerY);
-  ctx.rotate(drumAngle);
-
-  ctx.strokeStyle = isLight ? "rgba(148,163,184,0.18)" : "rgba(226,232,240,0.12)";
-  ctx.lineWidth = Math.max(2, layout.width * 0.003);
-  const bladeAngles = [-0.3 * Math.PI, 0.18 * Math.PI, 0.66 * Math.PI];
-  for (const offset of bladeAngles) {
-    ctx.beginPath();
-    ctx.moveTo(-layout.drumRadius * 0.08, 0);
-    ctx.lineTo(
-      Math.cos(offset) * layout.drumRadius * 0.76,
-      Math.sin(offset) * layout.drumRadius * 0.76,
-    );
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(
-      Math.cos(offset) * layout.drumRadius * 0.52,
-      Math.sin(offset) * layout.drumRadius * 0.52,
-      layout.ballRadius * 0.92,
-      0,
-      Math.PI * 2,
-    );
-    ctx.stroke();
-  }
-
-  ctx.beginPath();
-  ctx.moveTo(-layout.drumRadius * 0.64, -layout.drumRadius * 0.42);
-  ctx.lineTo(layout.drumRadius * 0.44, layout.drumRadius * 0.1);
-  ctx.stroke();
-
-  const spinningShadow = ctx.createRadialGradient(
-    0,
-    0,
-    layout.drumRadius * 0.08,
-    0,
-    0,
-    layout.drumRadius * 0.88,
-  );
-  spinningShadow.addColorStop(0, isLight ? "rgba(148,163,184,0.1)" : "rgba(255,255,255,0.08)");
-  spinningShadow.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = spinningShadow;
-  ctx.beginPath();
-  ctx.arc(0, 0, layout.drumRadius * 0.88, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
 
   const drumBalls = balls
     .filter((ball) => ball.state === "drum")
@@ -1011,6 +960,7 @@ export default function LottoMachine() {
       const gravity = runtime.running ? 0.24 * step : 0.36 * step;
       const centerPull = runtime.running ? 0.0045 * step : 0.002 * step;
       const boundary = activeLayout.drumRadius - activeLayout.ballRadius * 1.02;
+      const floorY = activeLayout.centerY + activeLayout.drumRadius * 0.82 - activeLayout.ballRadius;
 
       for (const ball of balls) {
         if (ball.state !== "drum") {
@@ -1049,6 +999,14 @@ export default function LottoMachine() {
           }
           ball.vx *= 0.98;
           ball.vy *= 0.98;
+        }
+
+        if (ball.y > floorY) {
+          ball.y = floorY;
+          if (ball.vy > 0) {
+            ball.vy *= -0.72;
+          }
+          ball.vx *= 0.985;
         }
       }
 
