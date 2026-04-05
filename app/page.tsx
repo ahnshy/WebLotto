@@ -51,6 +51,7 @@ export default function Page() {
   const [checked, setChecked] = React.useState<Set<string>>(new Set());
   const [purchaseQueue, setPurchaseQueue] = React.useState<DrawRow[]>([]);
   const [loadingView, setLoadingView] = React.useState(false);
+  const [historyLoading, setHistoryLoading] = React.useState(true);
   const [aiModelInitializing, setAiModelInitializing] = React.useState(false);
   const { section } = useNav();
 
@@ -65,7 +66,9 @@ export default function Page() {
   const isAiMlSection = section === 'AI 머신러닝 추출';
   const isSimulationSection = section === '모의추첨';
   const isExtractionSection = isRandomSection || isStatSection || isPatternSection || isAiSection || isAiMlSection;
-  const loadingMessage = section === '당첨번호보기' ? '당첨번호 가져오는 중....' : '불러오는 중....';
+  const loadingMessage = section === '당첨번호보기'
+    ? '로딩 중입니다... 잠시 기다려 주십시요.'
+    : '불러오는 중....';
   const queueStorageKey = React.useMemo(
     () => `purchase-queue:${user?.id ?? 'guest'}`,
     [user?.id]
@@ -73,18 +76,42 @@ export default function Page() {
 
   React.useEffect(() => {
     if (authLoading) return;
+    let cancelled = false;
     (async () => {
+      setHistoryLoading(true);
       try {
-        const [d, h] = await Promise.all([fetchDraws(user?.id ?? null), fetchLottoHistoryAll()]);
+        const [d, initialHistory] = await Promise.all([
+          fetchDraws(user?.id ?? null),
+          fetchLottoHistoryAll(30),
+        ]);
+
+        if (cancelled) return;
+
         setDraws(d || []);
         if (d && d.length) setSelected(d[0]);
-        setHistory(h || []);
+        setHistory(initialHistory || []);
+        setHistoryLoading(false);
+
+        fetchLottoHistoryAll()
+          .then((allHistory) => {
+            if (cancelled) return;
+            setHistory(allHistory || []);
+          })
+          .catch((error) => {
+            console.error('Failed to fetch full lotto history:', error);
+          });
       } catch (e) {
         console.error('Failed to fetch data:', e);
+        if (cancelled) return;
         setDraws([]);
         setHistory([]);
+        setHistoryLoading(false);
       }
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [authLoading, user?.id]);
 
   React.useEffect(() => {
@@ -108,7 +135,7 @@ export default function Page() {
   }, [purchaseQueue, queueStorageKey]);
 
   React.useEffect(() => {
-    if (section === '당첨번호보기' || section === '당첨 패턴 분석') {
+    if (section === '당첨 패턴 분석') {
       setLoadingView(true);
       const t = setTimeout(() => setLoadingView(false), 300);
       return () => clearTimeout(t);
@@ -470,7 +497,11 @@ export default function Page() {
           {isSimulationSection && <MockDrawPanel />}
 
           <Backdrop
-            open={loadingView || ((isAiSection || isAiMlSection) && aiModelInitializing)}
+            open={
+              loadingView ||
+              (section === '당첨번호보기' && historyLoading) ||
+              ((isAiSection || isAiMlSection) && aiModelInitializing)
+            }
             sx={{
               position: 'absolute',
               inset: 0,
