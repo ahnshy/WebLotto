@@ -46,6 +46,11 @@ function isExtractionTagsColumnError(error: unknown) {
   return message.includes('extraction_tags');
 }
 
+function isOwnerColumnError(error: unknown) {
+  const message = getErrorText(error);
+  return message.includes('owner_id') || message.includes('owner_email');
+}
+
 function getErrorText(error: unknown) {
   if (typeof error === 'string') return error;
   if (error && typeof error === 'object') {
@@ -101,37 +106,49 @@ export async function fetchLottoHistoryAll(): Promise<LottoRow[]> {
 export async function saveDraw(
   numbers: number[],
   extractionMethod: DrawMethod,
-  extractionTags: string[] = []
+  extractionTags: string[] = [],
+  owner?: { id?: string | null; email?: string | null }
 ): Promise<DrawRow> {
+  const ownerPayload = owner?.id ? { owner_id: owner.id, owner_email: owner.email ?? null } : {};
+
   const primary = await db
     .from('draws')
-    .insert({ numbers, extraction_method: extractionMethod, extraction_tags: extractionTags })
+    .insert({ numbers, extraction_method: extractionMethod, extraction_tags: extractionTags, ...ownerPayload })
     .select()
     .single();
 
   if (!primary.error) return primary.data as DrawRow;
 
-  if (!(isExtractionMethodColumnError(primary.error) || isExtractionTagsColumnError(primary.error))) {
+  if (!(isExtractionMethodColumnError(primary.error) || isExtractionTagsColumnError(primary.error) || isOwnerColumnError(primary.error))) {
     throw primary.error;
   }
 
   const methodOnly = await db
     .from('draws')
-    .insert({ numbers, extraction_method: extractionMethod })
+    .insert({ numbers, extraction_method: extractionMethod, ...ownerPayload })
     .select()
     .single();
 
   if (!methodOnly.error) return methodOnly.data as DrawRow;
-  if (!isExtractionMethodColumnError(methodOnly.error)) throw methodOnly.error;
+  if (!(isExtractionMethodColumnError(methodOnly.error) || isOwnerColumnError(methodOnly.error))) throw methodOnly.error;
 
   const fallback = await db
+    .from('draws')
+    .insert({ numbers, ...ownerPayload })
+    .select()
+    .single();
+
+  if (!fallback.error) return fallback.data as DrawRow;
+  if (!isOwnerColumnError(fallback.error)) throw fallback.error;
+
+  const legacy = await db
     .from('draws')
     .insert({ numbers })
     .select()
     .single();
 
-  if (fallback.error) throw fallback.error;
-  return fallback.data as DrawRow;
+  if (legacy.error) throw legacy.error;
+  return legacy.data as DrawRow;
 }
 
 export async function ensurePreparedLstmModel(force = false) {
