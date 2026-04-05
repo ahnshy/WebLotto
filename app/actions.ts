@@ -47,7 +47,7 @@ export async function fetchDraws(ownerId?: string | null){
   const baseQuery = () => supabase.from('draws').select('*').order('created_at',{ascending:false}).limit(200);
 
   if (ownerId) {
-    const scoped = await baseQuery().or(`owner_id.is.null,owner_id.eq.${ownerId}`);
+    const scoped = await baseQuery().eq('owner_id', ownerId);
     if (!scoped.error) return scoped.data as DrawRow[];
     if (!isOwnerColumnError(scoped.error)) throw scoped.error;
   }
@@ -110,7 +110,7 @@ export async function deleteDraws(ids:string[], ownerId?: string | null){
       .from('draws')
       .delete({count:'exact'})
       .in('id',ids)
-      .or(`owner_id.is.null,owner_id.eq.${ownerId}`);
+      .eq('owner_id', ownerId);
     if (!scoped.error) return {count:scoped.count??0};
     if (!isOwnerColumnError(scoped.error)) throw scoped.error;
   }
