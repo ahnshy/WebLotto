@@ -18,10 +18,14 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const body = await request.json().catch(() => null);
     const prediction = await generateRandomForestPrediction();
-    const draw = await saveDraw(prediction.numbers, 'random_forest');
+    const draw = await saveDraw(prediction.numbers, 'random_forest', [], {
+      id: body?.ownerId ?? null,
+      email: body?.ownerEmail ?? null,
+    });
 
     return NextResponse.json({
       success: true,
