@@ -3,6 +3,7 @@
 import * as React from 'react';
 import {
   Alert,
+  Box,
   Button,
   Card,
   CardContent,
@@ -20,6 +21,72 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import NumberBall from './NumberBall';
 import type { LottoRow } from '@/app/actions';
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function ResponsiveBallRow({
+  numbers,
+  bonus,
+  maxSize,
+}: {
+  numbers: number[];
+  bonus?: number;
+  maxSize: number;
+}) {
+  const rowRef = React.useRef<HTMLDivElement | null>(null);
+  const [width, setWidth] = React.useState(0);
+
+  React.useEffect(() => {
+    const node = rowRef.current;
+    if (!node) return;
+
+    const update = () => setWidth(node.clientWidth);
+    update();
+
+    const observer = new ResizeObserver(() => update());
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  const gap = 6;
+  const hasBonus = typeof bonus === 'number';
+  const plusWidth = hasBonus ? 14 : 0;
+  const totalBallCount = numbers.length + (hasBonus ? 1 : 0);
+  const availableWidth = width || (maxSize + gap) * totalBallCount;
+  const totalGapWidth = gap * Math.max(0, totalBallCount - 1);
+  const computed = (availableWidth - totalGapWidth - plusWidth) / Math.max(1, totalBallCount);
+  const size = clamp(Math.floor(computed), 18, maxSize);
+  const plusFontSize = clamp(Math.round(size * 0.6), 12, 18);
+
+  return (
+    <Box
+      ref={rowRef}
+      sx={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        flexWrap: 'nowrap',
+        gap: `${gap}px`,
+        overflow: 'hidden',
+        minWidth: 0,
+      }}
+    >
+      {numbers.map((n, index) => (
+        <NumberBall key={`${n}-${index}`} n={n} size={size} mr={0} />
+      ))}
+      {hasBonus && (
+        <>
+          <Typography sx={{ fontSize: plusFontSize, fontWeight: 700, lineHeight: 1, flex: '0 0 auto' }}>
+            +
+          </Typography>
+          <NumberBall n={bonus} size={size} mr={0} />
+        </>
+      )}
+    </Box>
+  );
+}
 
 function rankOf(matches: number, bonus: boolean) {
   if (matches === 6) return '1등';
@@ -122,11 +189,9 @@ export default function CompareView({
       <Card variant="outlined">
         <CardContent>
           <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>현재 선택 번호</Typography>
-          <Stack direction="row" mt={1} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
-            {pick.map((n) => (
-              <NumberBall key={n} n={n} size={ballSize} mr={0} />
-            ))}
-          </Stack>
+          <Box mt={1}>
+            <ResponsiveBallRow numbers={pick} maxSize={ballSize} />
+          </Box>
           <Button
             variant="outlined"
             size="small"
@@ -169,13 +234,9 @@ export default function CompareView({
                   <Typography fontWeight={700}>
                     {r.round}회 {r.rank}
                   </Typography>
-                  <Stack direction="row" alignItems="center" sx={{ flexWrap: 'wrap', gap: 0.5 }}>
-                    {r.win.map((n: number) => (
-                      <NumberBall key={`${r.round}-${n}`} n={n} size={ballSize} mr={0} />
-                    ))}
-                    <Typography sx={{ mx: 0.25 }}>+</Typography>
-                    <NumberBall n={r.bonus} size={ballSize} mr={0} />
-                  </Stack>
+                  <Box sx={{ width: { xs: '100%', sm: 'min(100%, 360px)' }, minWidth: 0 }}>
+                    <ResponsiveBallRow numbers={r.win} bonus={r.bonus} maxSize={ballSize} />
+                  </Box>
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
                   일치 번호: {r.matches.length ? r.matches.join(', ') : '없음'}
