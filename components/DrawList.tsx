@@ -1,9 +1,7 @@
 'use client';
 
-import {
-  alpha,
-  useTheme,
-} from '@mui/material/styles';
+import * as React from 'react';
+import { alpha, useTheme } from '@mui/material/styles';
 import {
   Box,
   Checkbox,
@@ -30,6 +28,57 @@ const METHOD_LABELS: Record<string, string> = {
   unknown: '미분류',
 };
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function ResponsiveBallRow({
+  numbers,
+  maxSize,
+}: {
+  numbers: number[];
+  maxSize: number;
+}) {
+  const rowRef = React.useRef<HTMLDivElement | null>(null);
+  const [width, setWidth] = React.useState(0);
+
+  React.useEffect(() => {
+    const node = rowRef.current;
+    if (!node) return;
+
+    const update = () => setWidth(node.clientWidth);
+    update();
+
+    const observer = new ResizeObserver(() => update());
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  const gap = width > 260 ? 4 : width > 210 ? 3 : 2;
+  const totalGap = gap * Math.max(0, numbers.length - 1);
+  const computed = ((width || maxSize * numbers.length) - totalGap) / Math.max(1, numbers.length);
+  const size = clamp(Math.floor(computed), 14, maxSize);
+
+  return (
+    <Box
+      ref={rowRef}
+      sx={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        flexWrap: 'nowrap',
+        gap: `${gap}px`,
+        minWidth: 0,
+        overflow: 'hidden',
+      }}
+    >
+      {numbers.map((number, index) => (
+        <NumberBall key={`${number}-${index}`} n={number} size={size} mr={0} />
+      ))}
+    </Box>
+  );
+}
+
 export default function DrawList({
   draws,
   selectedId,
@@ -50,7 +99,6 @@ export default function DrawList({
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const size = isXs ? Math.min(ballSize, 20) : ballSize;
-  const gap = isXs ? 0.25 : 0.5;
   const isNight = theme.palette.background.paper === '#151b2f';
   const scrollbarThumb = isNight
     ? alpha('#4f46e5', 0.45)
@@ -72,7 +120,7 @@ export default function DrawList({
         width: '100%',
         maxHeight: '70vh',
         overflowY: 'auto',
-        overflowX: 'auto',
+        overflowX: 'hidden',
         scrollbarColor: `${scrollbarThumb} ${scrollbarTrack}`,
         scrollbarWidth: 'thin',
         '&::-webkit-scrollbar': {
@@ -95,34 +143,23 @@ export default function DrawList({
       }}
     >
       {draws.map((draw) => (
-        <ListItem
-          key={draw.id}
-          disablePadding
-          disableGutters
-          sx={{ overflowX: 'hidden' }}
-        >
+        <ListItem key={draw.id} disablePadding disableGutters sx={{ overflowX: 'hidden' }}>
           <ListItemButton
             selected={selectedId === draw.id}
             onClick={() => onSelect(draw)}
-            sx={{ px: 1, py: 0.5, minWidth: 0 }}
+            sx={{ px: 1, py: 0.75, minWidth: 0, alignItems: 'flex-start' }}
           >
             <ListItemIcon
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleCheck(draw.id);
               }}
-              sx={{ minWidth: 36 }}
+              sx={{ minWidth: 36, pt: 0.25 }}
             >
-              <Checkbox
-                edge="start"
-                checked={checkedIds.has(draw.id)}
-                tabIndex={-1}
-                disableRipple
-                size="small"
-              />
+              <Checkbox edge="start" checked={checkedIds.has(draw.id)} tabIndex={-1} disableRipple size="small" />
             </ListItemIcon>
 
-            <Stack sx={{ flex: 1, minWidth: 0 }} spacing={0.35}>
+            <Stack sx={{ flex: 1, minWidth: 0 }} spacing={0.5}>
               <Stack direction="row" alignItems="center" sx={{ flexWrap: 'wrap', gap: 0.5, minWidth: 0 }}>
                 <Box
                   sx={{
@@ -162,20 +199,9 @@ export default function DrawList({
                 ))}
               </Stack>
 
-              <Stack
-                direction="row"
-                alignItems="center"
-                sx={{ flexWrap: 'wrap', gap, minWidth: 0 }}
-              >
-                {draw.numbers.map((number) => (
-                  <NumberBall key={number} n={number} size={size} mr={0} />
-                ))}
-              </Stack>
+              <ResponsiveBallRow numbers={draw.numbers} maxSize={size} />
 
-              <Typography
-                variant="caption"
-                sx={{ opacity: 0.55, display: 'block', lineHeight: 1.2 }}
-              >
+              <Typography variant="caption" sx={{ opacity: 0.55, display: 'block', lineHeight: 1.2 }}>
                 {new Date(draw.created_at).toLocaleString()}
               </Typography>
             </Stack>
