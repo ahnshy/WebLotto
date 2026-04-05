@@ -18,10 +18,14 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const body = await request.json().catch(() => null);
     const prediction = await generateLstmPrediction();
-    const draw = await saveDraw(prediction.numbers, 'lstm');
+    const draw = await saveDraw(prediction.numbers, 'lstm', [], {
+      id: body?.ownerId ?? null,
+      email: body?.ownerEmail ?? null,
+    });
 
     return NextResponse.json({
       success: true,
