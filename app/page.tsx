@@ -17,6 +17,7 @@ import PatternBasedPanel from '@/components/PatternBasedPanel';
 import MockDrawPanel from '@/components/MockDrawPanel';
 import DrawHistoryActions from '@/components/DrawHistoryActions';
 import { printLottoSlip } from '@/components/lottoPrint';
+import { useAuth } from '@/components/AuthContext';
 
 const DrawList = dynamic(() => import('@/components/DrawList'), { ssr: false });
 const CompareView = dynamic(() => import('@/components/CompareView'), { ssr: false });
@@ -38,6 +39,7 @@ const WinningsTable = dynamic(() => import('@/components/WinningsTable'), {
 });
 
 export default function Page() {
+  const { user, email, loading: authLoading } = useAuth();
   const [draws, setDraws] = React.useState<DrawRow[]>([]);
   const [selected, setSelected] = React.useState<DrawRow | null>(null);
   const [history, setHistory] = React.useState<LottoRow[]>([]);
@@ -60,9 +62,10 @@ export default function Page() {
   const loadingMessage = section === '당첨번호보기' ? '당첨번호 가져오는 중....' : '불러오는 중....';
 
   React.useEffect(() => {
+    if (authLoading) return;
     (async () => {
       try {
-        const [d, h] = await Promise.all([fetchDraws(), fetchLottoHistoryAll()]);
+        const [d, h] = await Promise.all([fetchDraws(user?.id ?? null), fetchLottoHistoryAll()]);
         setDraws(d || []);
         if (d && d.length) setSelected(d[0]);
         setHistory(h || []);
@@ -72,7 +75,7 @@ export default function Page() {
         setHistory([]);
       }
     })();
-  }, []);
+  }, [authLoading, user?.id]);
 
   React.useEffect(() => {
     if (section === '당첨번호보기' || section === '당첨 패턴 분석') {
@@ -91,7 +94,7 @@ export default function Page() {
 
   const onGenerate = async () => {
     const g = generate();
-    const row = await saveDraw(g, 'random');
+    const row = await saveDraw(g, 'random', [], { id: user?.id ?? null, email });
     setDraws((prev) => [row, ...prev]);
     setSelected(row);
   };
@@ -124,14 +127,14 @@ export default function Page() {
   const removeSelected = async () => {
     if (checked.size === 0) return;
     const ids = Array.from(checked);
-    await deleteDraws(ids);
+    await deleteDraws(ids, user?.id ?? null);
     setDraws((prev) => prev.filter((d) => !checked.has(d.id)));
     if (selected && checked.has(selected.id)) setSelected(null);
     setChecked(new Set());
   };
 
   const removeOne = async (id: string) => {
-    await deleteDraws([id]);
+    await deleteDraws([id], user?.id ?? null);
     setDraws((prev) => prev.filter((d) => d.id !== id));
     if (selected?.id === id) setSelected(null);
     setChecked((prev) => {
@@ -201,7 +204,8 @@ export default function Page() {
                   const row = await saveDraw(
                     numbers,
                     'stat',
-                    options.map((option: StatOption) => STAT_OPTION_LABELS[option].title)
+                    options.map((option: StatOption) => STAT_OPTION_LABELS[option].title),
+                    { id: user?.id ?? null, email }
                   );
                   setDraws((prev) => [row, ...prev]);
                   setSelected(row);
@@ -242,7 +246,7 @@ export default function Page() {
                 history={history}
                 ballSize={ballSize}
                 onGenerated={async (numbers) => {
-                  const row = await saveDraw(numbers, 'pattern');
+                  const row = await saveDraw(numbers, 'pattern', [], { id: user?.id ?? null, email });
                   setDraws((prev) => [row, ...prev]);
                   setSelected(row);
                 }}
@@ -285,6 +289,8 @@ export default function Page() {
                   setSelected(row);
                 }}
                 onWarmStateChange={setAiModelInitializing}
+                ownerId={user?.id ?? null}
+                ownerEmail={email}
               />
 
               <Stack
@@ -324,6 +330,8 @@ export default function Page() {
                   setSelected(row);
                 }}
                 onWarmStateChange={setAiModelInitializing}
+                ownerId={user?.id ?? null}
+                ownerEmail={email}
               />
 
               <Stack
