@@ -45,10 +45,14 @@ export default function AiLstmPanel({
   ballSize,
   onGenerated,
   onWarmStateChange,
+  ownerId,
+  ownerEmail,
 }: {
   ballSize: number;
   onGenerated: (row: DrawRow) => void;
   onWarmStateChange?: (warming: boolean) => void;
+  ownerId?: string | null;
+  ownerEmail?: string | null;
 }) {
   const [running, setRunning] = React.useState(false);
   const [warming, setWarming] = React.useState(true);
@@ -97,7 +101,11 @@ export default function AiLstmPanel({
     setError('');
 
     try {
-      const res = await fetch('/api/predictions/lstm', { method: 'POST' });
+      const res = await fetch('/api/predictions/lstm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ownerId, ownerEmail }),
+      });
       const text = await res.text();
       const json = text ? JSON.parse(text) : null;
 
