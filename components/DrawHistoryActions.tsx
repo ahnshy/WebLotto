@@ -1,22 +1,31 @@
 'use client';
 
 import * as React from 'react';
-import { Button, ButtonGroup, Stack } from '@mui/material';
+import { Button, Stack } from '@mui/material';
 import SelectAllIcon from '@mui/icons-material/SelectAll';
 import IndeterminateCheckBoxOutlinedIcon from '@mui/icons-material/IndeterminateCheckBoxOutlined';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import PrintIcon from '@mui/icons-material/Print';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import ShoppingCartCheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
 
 export default function DrawHistoryActions({
   onSelectAll,
   onClearAll,
   onRemoveSelected,
   onPrintSelected,
+  onCopySelected,
+  onOpenDhLottery,
+  onAddToPurchaseQueue,
 }: {
   onSelectAll: () => void;
   onClearAll: () => void;
   onRemoveSelected: () => void;
   onPrintSelected: () => void;
+  onCopySelected: () => void;
+  onOpenDhLottery: () => void;
+  onAddToPurchaseQueue: () => void;
 }) {
   return (
     <Stack
@@ -25,26 +34,28 @@ export default function DrawHistoryActions({
       alignItems={{ xs: 'stretch', md: 'center' }}
       spacing={1}
     >
-      <ButtonGroup
-        variant="outlined"
-        size="small"
+      <Stack
+        direction="row"
+        spacing={1}
+        useFlexGap
+        flexWrap="wrap"
         sx={{
-          alignSelf: 'flex-start',
-          borderRadius: 2,
-          overflow: 'hidden',
-          flexWrap: 'wrap',
-          '& .MuiButton-root': {
+          alignSelf: { xs: 'stretch', md: 'flex-start' },
+          '& .action-button': {
             textTransform: 'none',
             fontWeight: 700,
-            px: 1.5,
+            px: 1.25,
             gap: 1,
-            borderColor: 'divider',
+            minWidth: { xs: 'calc(50% - 4px)', sm: 'auto' },
           },
         }}
       >
-        <Button onClick={onSelectAll} startIcon={<SelectAllIcon />}>전체 선택</Button>
-        <Button onClick={onClearAll} startIcon={<IndeterminateCheckBoxOutlinedIcon />}>선택 해제</Button>
+        <Button className="action-button" variant="outlined" size="small" onClick={onSelectAll} startIcon={<SelectAllIcon />}>전체 선택</Button>
+        <Button className="action-button" variant="outlined" size="small" onClick={onClearAll} startIcon={<IndeterminateCheckBoxOutlinedIcon />}>선택 해제</Button>
         <Button
+          className="action-button"
+          variant="outlined"
+          size="small"
           color="error"
           onClick={onRemoveSelected}
           startIcon={<DeleteSweepIcon />}
@@ -57,21 +68,65 @@ export default function DrawHistoryActions({
         >
           선택 삭제
         </Button>
-      </ButtonGroup>
+      </Stack>
 
-      <Button
-        variant="contained"
-        color="inherit"
-        onClick={onPrintSelected}
-        startIcon={<PrintIcon />}
+      <Stack
+        direction="row"
+        spacing={1}
+        useFlexGap
+        flexWrap="wrap"
         sx={{
           alignSelf: { xs: 'stretch', md: 'flex-start' },
-          textTransform: 'none',
-          fontWeight: 700,
+          '& .action-button': {
+            minWidth: { xs: 'calc(50% - 4px)', sm: 'auto' },
+          },
         }}
       >
-        출력
-      </Button>
+        <Button
+          className="action-button"
+          size="small"
+          variant="outlined"
+          onClick={onCopySelected}
+          startIcon={<ContentCopyIcon />}
+          sx={{ textTransform: 'none', fontWeight: 700 }}
+        >
+          번호 복사
+        </Button>
+        <Button
+          className="action-button"
+          size="small"
+          variant="outlined"
+          onClick={onOpenDhLottery}
+          startIcon={<OpenInNewIcon />}
+          sx={{ textTransform: 'none', fontWeight: 700 }}
+        >
+          동행복권 열기
+        </Button>
+        <Button
+          className="action-button"
+          size="small"
+          variant="outlined"
+          onClick={onAddToPurchaseQueue}
+          startIcon={<ShoppingCartCheckoutIcon />}
+          sx={{ textTransform: 'none', fontWeight: 700 }}
+        >
+          구매 대기함
+        </Button>
+        <Button
+          className="action-button"
+          size="small"
+          variant="contained"
+          color="inherit"
+          onClick={onPrintSelected}
+          startIcon={<PrintIcon />}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 700,
+          }}
+        >
+          출력
+        </Button>
+      </Stack>
     </Stack>
   );
 }
