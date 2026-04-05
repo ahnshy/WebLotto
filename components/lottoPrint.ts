@@ -22,7 +22,7 @@ export function printLottoSlip(draws: DrawRow[]) {
   const popup = window.open('', 'lotto-print-preview', centerPopup(popupWidth, popupHeight));
 
   if (!popup) {
-    throw new Error('출력 팝업을 열 수 없습니다. 브라우저 팝업 차단 설정을 확인해 주세요.');
+    throw new Error('출력 팝업을 열 수 없습니다. 브라우저의 팝업 차단 설정을 확인해 주세요.');
   }
 
   popup.document.write(`
@@ -65,7 +65,7 @@ export function printLottoSlip(draws: DrawRow[]) {
       <body>
         <div class="message">
           <div class="spinner"></div>
-          <div>로또 용지 미리보기를 준비하는 중입니다...</div>
+          <div>로또 용지 미리보기를 준비하고 있습니다...</div>
         </div>
       </body>
     </html>
