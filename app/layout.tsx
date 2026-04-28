@@ -1,6 +1,5 @@
 import './globals.css';
 import ThemeProviderRoot from './theme/ThemeProviderRoot';
-import AppShell from '@/components/AppShell';
 import { NavProvider } from '@/components/NavContext';
 import AuthProvider from '@/components/AuthContext';
 
@@ -21,7 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko"><body>
       <ThemeProviderRoot>
         <AuthProvider>
-          <NavProvider><AppShell>{children}</AppShell></NavProvider>
+          <NavProvider>{children}</NavProvider>
         </AuthProvider>
       </ThemeProviderRoot>
     </body></html>
