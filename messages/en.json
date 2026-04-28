@@ -1,0 +1,113 @@
+{
+  "AppShell": {
+    "openDrawer": "Open navigation",
+    "light": "Light",
+    "dark": "Dark",
+    "night": "Night",
+    "googleLogin": "Sign in with Google"
+  },
+  "LocaleSwitcher": {
+    "label": "Language"
+  },
+  "Sidebar": {
+    "analysis": "Analysis",
+    "winnings": "Winning Numbers",
+    "patternAnalysis": "Winning Pattern Analysis",
+    "draw": "Generate",
+    "random": "Random Draw",
+    "stat": "Stat-based Draw",
+    "pattern": "Pattern-based Draw",
+    "aiLstm": "AI Deep Learning Draw",
+    "aiRandomForest": "AI Machine Learning Draw",
+    "simulation": "Simulation",
+    "sync": "Sync",
+    "openSidebar": "Open sidebar",
+    "closeSidebar": "Close sidebar"
+  },
+  "HomePage": {
+    "loadingWinnings": "Loading winning numbers. Please wait.",
+    "loading": "Loading...",
+    "recentDraws": "Recent Draws",
+    "generateNew": "Generate New",
+    "initializingAi": "Initializing AI model...",
+    "history": {
+      "stat": "Stat Draw History",
+      "pattern": "Pattern Draw History",
+      "ai": "AI Draw History"
+    },
+    "purchaseQueue": {
+      "title": "Purchase Queue",
+      "clear": "Clear",
+      "description": "Store selected numbers temporarily, copy them, or open the official lottery site for manual purchase.",
+      "copy": "Copy Queue",
+      "openSite": "Open Site",
+      "print": "Print Queue",
+      "empty": "No saved numbers yet.",
+      "item": "Queue {index}",
+      "remove": "Remove"
+    },
+    "alerts": {
+      "selectNumbersToCopy": "Select numbers to copy.",
+      "selectNumbersToPrint": "Select at least one number to print.",
+      "maxPrint": "You can print up to 5 number sets at once.",
+      "copiedSelected": "Copied selected numbers to the clipboard.",
+      "copyFailed": "Failed to copy numbers: {error}",
+      "openedLottery": "Opened the official lottery site and copied the selected numbers.",
+      "openLotteryFailed": "Failed to open the official lottery site: {error}",
+      "selectNumbersToQueue": "Select numbers to add to the purchase queue.",
+      "emptyQueue": "The purchase queue is empty.",
+      "maxQueuePrint": "The purchase queue supports printing up to 5 sets. Remove some entries first."
+    }
+  },
+  "DrawHistoryActions": {
+    "selectAll": "Select All",
+    "clearAll": "Clear Selection",
+    "removeSelected": "Delete Selected",
+    "copy": "Copy Numbers",
+    "openLottery": "Open Lottery Site",
+    "queue": "Purchase Queue",
+    "print": "Print"
+  },
+  "DrawList": {
+    "methods": {
+      "random": "Random",
+      "stat": "Stats",
+      "pattern": "Pattern",
+      "lstm": "Deep Learning",
+      "random_forest": "Machine Learning",
+      "unknown": "Uncategorized"
+    },
+    "delete": "Delete item"
+  },
+  "CompareView": {
+    "empty": "No selected numbers.",
+    "current": "Current Selection",
+    "check": "Check Winning Status",
+    "summary": "Rank Summary",
+    "ranks": {
+      "1": "1st",
+      "2": "2nd",
+      "3": "3rd",
+      "4": "4th",
+      "5": "5th"
+    },
+    "roundRank": "Round {round} {rank}",
+    "matchedNumbers": "Matched numbers: {numbers}",
+    "none": "None",
+    "dialogTitle": "Check Winning Status",
+    "roundNumber": "Round Number",
+    "roundPlaceholder": "e.g. 1150",
+    "invalidRound": "Enter a valid round number.",
+    "won": "You won{rank, select, empty {} other { ({rank})}}",
+    "lost": "No win",
+    "matchedCount": "Matched count",
+    "bonusMatched": "Bonus matched",
+    "yes": "Yes",
+    "no": "No",
+    "predictedNumbers": "Predicted numbers",
+    "winningNumbers": "Winning numbers",
+    "retry": "Check Again",
+    "close": "Close",
+    "confirm": "Check"
+  }
+}

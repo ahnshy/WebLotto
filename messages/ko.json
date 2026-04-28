@@ -1,0 +1,113 @@
+{
+  "AppShell": {
+    "openDrawer": "메뉴 열기",
+    "light": "라이트",
+    "dark": "다크",
+    "night": "나이트",
+    "googleLogin": "Google 로그인"
+  },
+  "LocaleSwitcher": {
+    "label": "언어 설정"
+  },
+  "Sidebar": {
+    "analysis": "분석",
+    "winnings": "당첨번호 보기",
+    "patternAnalysis": "당첨 패턴 분석",
+    "draw": "추출",
+    "random": "난수 추출",
+    "stat": "통계기반 추출",
+    "pattern": "패턴기반 추출",
+    "aiLstm": "AI 딥러닝 추출",
+    "aiRandomForest": "AI 머신러닝 추출",
+    "simulation": "시뮬레이션",
+    "sync": "동기화",
+    "openSidebar": "사이드바 열기",
+    "closeSidebar": "사이드바 닫기"
+  },
+  "HomePage": {
+    "loadingWinnings": "로딩 중입니다. 잠시 기다려 주세요.",
+    "loading": "불러오는 중...",
+    "recentDraws": "최근 추출",
+    "generateNew": "새로 추출",
+    "initializingAi": "AI 모델을 초기화 중입니다...",
+    "history": {
+      "stat": "통계 추출 이력",
+      "pattern": "패턴 추출 이력",
+      "ai": "AI 추출 이력"
+    },
+    "purchaseQueue": {
+      "title": "구매 대기함",
+      "clear": "비우기",
+      "description": "선택한 번호를 임시로 보관하고, 복사하거나 동행복권 사이트를 열어 오프라인 또는 수동 구매에 활용할 수 있습니다.",
+      "copy": "대기함 복사",
+      "openSite": "사이트 열기",
+      "print": "대기함 출력",
+      "empty": "아직 담긴 번호가 없습니다.",
+      "item": "대기 {index}",
+      "remove": "제거"
+    },
+    "alerts": {
+      "selectNumbersToCopy": "복사할 번호를 선택해 주세요.",
+      "selectNumbersToPrint": "출력할 번호를 1개 이상 선택해 주세요.",
+      "maxPrint": "최대 5개 번호까지만 출력할 수 있습니다.",
+      "copiedSelected": "선택한 번호를 클립보드에 복사했습니다.",
+      "copyFailed": "번호 복사에 실패했습니다: {error}",
+      "openedLottery": "동행복권 사이트를 열고 선택한 번호를 클립보드에 복사했습니다.",
+      "openLotteryFailed": "동행복권 열기에 실패했습니다: {error}",
+      "selectNumbersToQueue": "구매 대기함에 담을 번호를 선택해 주세요.",
+      "emptyQueue": "구매 대기함이 비어 있습니다.",
+      "maxQueuePrint": "구매 대기함은 출력 시 최대 5개까지만 지원합니다. 일부를 제거해 주세요."
+    }
+  },
+  "DrawHistoryActions": {
+    "selectAll": "전체 선택",
+    "clearAll": "선택 해제",
+    "removeSelected": "선택 삭제",
+    "copy": "번호 복사",
+    "openLottery": "동행복권 열기",
+    "queue": "구매 대기함",
+    "print": "출력"
+  },
+  "DrawList": {
+    "methods": {
+      "random": "난수",
+      "stat": "통계",
+      "pattern": "패턴",
+      "lstm": "딥러닝",
+      "random_forest": "머신러닝",
+      "unknown": "미분류"
+    },
+    "delete": "항목 삭제"
+  },
+  "CompareView": {
+    "empty": "선택된 추첨번호가 없습니다.",
+    "current": "현재 선택 번호",
+    "check": "당첨 여부 확인",
+    "summary": "등수 집계",
+    "ranks": {
+      "1": "1등",
+      "2": "2등",
+      "3": "3등",
+      "4": "4등",
+      "5": "5등"
+    },
+    "roundRank": "{round}회 {rank}",
+    "matchedNumbers": "일치 번호: {numbers}",
+    "none": "없음",
+    "dialogTitle": "당첨 여부 확인",
+    "roundNumber": "회차 번호",
+    "roundPlaceholder": "예: 1150",
+    "invalidRound": "유효한 회차 번호를 입력해 주세요.",
+    "won": "당첨입니다{rank, select, empty {} other { ({rank})}}",
+    "lost": "낙첨입니다",
+    "matchedCount": "일치 번호 수",
+    "bonusMatched": "보너스 일치",
+    "yes": "예",
+    "no": "아니오",
+    "predictedNumbers": "예측 번호",
+    "winningNumbers": "당첨 번호",
+    "retry": "다시 확인",
+    "close": "닫기",
+    "confirm": "확인"
+  }
+}
