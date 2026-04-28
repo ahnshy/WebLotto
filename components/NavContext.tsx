@@ -1,17 +1,20 @@
 'use client';
 
-import React, { createContext, useContext, useState } from 'react';
+import React, {createContext, useContext, useState} from 'react';
 
-export type Section =
-  | '당첨번호보기'
-  | '당첨 패턴 분석'
-  | '난수 추출'
-  | '통계기반 추출'
-  | '패턴기반 추출'
-  | 'AI 딥러닝 추출'
-  | 'AI 머신러닝 추출'
-  | '모의추첨'
-  | '동기화';
+export const SECTION_IDS = {
+  winnings: 'winnings',
+  patternAnalysis: 'patternAnalysis',
+  random: 'random',
+  stat: 'stat',
+  pattern: 'pattern',
+  aiLstm: 'aiLstm',
+  aiRandomForest: 'aiRandomForest',
+  simulation: 'simulation',
+  sync: 'sync'
+} as const;
+
+export type Section = (typeof SECTION_IDS)[keyof typeof SECTION_IDS];
 
 type NavContextValue = {
   section: Section;
@@ -26,11 +29,11 @@ export const useNav = () => {
   return value;
 };
 
-export function NavProvider({ children }: { children: React.ReactNode }) {
-  const [section, setSection] = useState<Section>('당첨번호보기');
+export function NavProvider({children}: {children: React.ReactNode}) {
+  const [section, setSection] = useState<Section>(SECTION_IDS.winnings);
 
   return (
-    <NavContext.Provider value={{ section, setSection }}>
+    <NavContext.Provider value={{section, setSection}}>
       {children}
     </NavContext.Provider>
   );
