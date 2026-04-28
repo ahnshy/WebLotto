@@ -9,6 +9,7 @@ import PrintIcon from '@mui/icons-material/Print';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ShoppingCartCheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
+import { useTranslations } from 'next-intl';
 
 export default function DrawHistoryActions({
   onSelectAll,
@@ -27,6 +28,7 @@ export default function DrawHistoryActions({
   onOpenDhLottery: () => void;
   onAddToPurchaseQueue: () => void;
 }) {
+  const t = useTranslations('DrawHistoryActions');
   return (
     <Stack
       direction={{ xs: 'column', md: 'row' }}
@@ -50,8 +52,8 @@ export default function DrawHistoryActions({
           },
         }}
       >
-        <Button className="action-button" variant="outlined" size="small" onClick={onSelectAll} startIcon={<SelectAllIcon />}>전체 선택</Button>
-        <Button className="action-button" variant="outlined" size="small" onClick={onClearAll} startIcon={<IndeterminateCheckBoxOutlinedIcon />}>선택 해제</Button>
+        <Button className="action-button" variant="outlined" size="small" onClick={onSelectAll} startIcon={<SelectAllIcon />}>{t('selectAll')}</Button>
+        <Button className="action-button" variant="outlined" size="small" onClick={onClearAll} startIcon={<IndeterminateCheckBoxOutlinedIcon />}>{t('clearAll')}</Button>
         <Button
           className="action-button"
           variant="outlined"
@@ -66,7 +68,7 @@ export default function DrawHistoryActions({
             },
           }}
         >
-          선택 삭제
+          {t('removeSelected')}
         </Button>
       </Stack>
 
@@ -90,7 +92,7 @@ export default function DrawHistoryActions({
           startIcon={<ContentCopyIcon />}
           sx={{ textTransform: 'none', fontWeight: 700 }}
         >
-          번호 복사
+          {t('copy')}
         </Button>
         <Button
           className="action-button"
@@ -100,7 +102,7 @@ export default function DrawHistoryActions({
           startIcon={<OpenInNewIcon />}
           sx={{ textTransform: 'none', fontWeight: 700 }}
         >
-          동행복권 열기
+          {t('openLottery')}
         </Button>
         <Button
           className="action-button"
@@ -110,7 +112,7 @@ export default function DrawHistoryActions({
           startIcon={<ShoppingCartCheckoutIcon />}
           sx={{ textTransform: 'none', fontWeight: 700 }}
         >
-          구매 대기함
+          {t('queue')}
         </Button>
         <Button
           className="action-button"
@@ -124,7 +126,7 @@ export default function DrawHistoryActions({
             fontWeight: 700,
           }}
         >
-          출력
+          {t('print')}
         </Button>
       </Stack>
     </Stack>
