@@ -19,6 +19,7 @@ import {
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import { useTranslations } from 'next-intl';
 import NumberBall from './NumberBall';
 import type { LottoRow } from '@/app/actions';
 
@@ -89,11 +90,11 @@ function ResponsiveBallRow({
 }
 
 function rankOf(matches: number, bonus: boolean) {
-  if (matches === 6) return '1등';
-  if (matches === 5 && bonus) return '2등';
-  if (matches === 5) return '3등';
-  if (matches === 4) return '4등';
-  if (matches === 3) return '5등';
+  if (matches === 6) return '1';
+  if (matches === 5 && bonus) return '2';
+  if (matches === 5) return '3';
+  if (matches === 4) return '4';
+  if (matches === 3) return '5';
   return null;
 }
 
@@ -108,6 +109,7 @@ export default function CompareView({
   history: LottoRow[];
   ballSize: number;
 }) {
+  const t = useTranslations('CompareView');
   const [winCheckDialogOpen, setWinCheckDialogOpen] = React.useState(false);
   const [roundInput, setRoundInput] = React.useState('');
   const [checking, setChecking] = React.useState(false);
@@ -115,7 +117,7 @@ export default function CompareView({
   const [checkError, setCheckError] = React.useState('');
 
   if (!pick) {
-    return <Typography color="text.secondary">선택된 추첨번호가 없습니다.</Typography>;
+    return <Typography color="text.secondary">{t('empty')}</Typography>;
   }
 
   const results = history
@@ -141,7 +143,7 @@ export default function CompareView({
   const handleCheckWin = async () => {
     const round = parseInt(roundInput, 10);
     if (!round) {
-      setCheckError('유효한 회차 번호를 입력해 주세요.');
+      setCheckError(t('invalidRound'));
       return;
     }
 
@@ -188,7 +190,7 @@ export default function CompareView({
     <Stack spacing={2}>
       <Card variant="outlined">
         <CardContent>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>현재 선택 번호</Typography>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{t('current')}</Typography>
           <Box mt={1}>
             <ResponsiveBallRow numbers={pick} maxSize={ballSize} />
           </Box>
@@ -203,7 +205,7 @@ export default function CompareView({
               setCheckError('');
             }}
           >
-            당첨 여부 확인
+            {t('check')}
           </Button>
         </CardContent>
       </Card>
@@ -211,14 +213,14 @@ export default function CompareView({
       <Card variant="outlined">
         <CardContent>
           <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 700 }}>
-            등수 집계
+            {t('summary')}
           </Typography>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 0.5, sm: 1.5 }} flexWrap="wrap">
-            <Typography>1등 {counts['1등'] || 0}회</Typography>
-            <Typography>2등 {counts['2등'] || 0}회</Typography>
-            <Typography>3등 {counts['3등'] || 0}회</Typography>
-            <Typography>4등 {counts['4등'] || 0}회</Typography>
-            <Typography>5등 {counts['5등'] || 0}회</Typography>
+            <Typography>{t('ranks.1')} {counts['1'] || 0}</Typography>
+            <Typography>{t('ranks.2')} {counts['2'] || 0}</Typography>
+            <Typography>{t('ranks.3')} {counts['3'] || 0}</Typography>
+            <Typography>{t('ranks.4')} {counts['4'] || 0}</Typography>
+            <Typography>{t('ranks.5')} {counts['5'] || 0}</Typography>
           </Stack>
         </CardContent>
       </Card>
@@ -232,14 +234,14 @@ export default function CompareView({
               <Stack spacing={1}>
                 <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'flex-start', sm: 'center' }} justifyContent="space-between" spacing={0.75}>
                   <Typography fontWeight={700}>
-                    {r.round}회 {r.rank}
+                    {t('roundRank', { round: r.round, rank: r.rank ? t(`ranks.${r.rank}` as const) : '' })}
                   </Typography>
                   <Box sx={{ width: { xs: '100%', sm: 'min(100%, 360px)' }, minWidth: 0 }}>
                     <ResponsiveBallRow numbers={r.win} bonus={r.bonus} maxSize={ballSize} />
                   </Box>
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
-                  일치 번호: {r.matches.length ? r.matches.join(', ') : '없음'}
+                  {t('matchedNumbers', { numbers: r.matches.length ? r.matches.join(', ') : t('none') })}
                 </Typography>
               </Stack>
             </CardContent>
@@ -248,18 +250,18 @@ export default function CompareView({
       </Stack>
 
       <Dialog open={winCheckDialogOpen} onClose={() => setWinCheckDialogOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>당첨 여부 확인</DialogTitle>
+        <DialogTitle>{t('dialogTitle')}</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           {checkError && <Alert severity="error" sx={{ mb: 2 }}>{checkError}</Alert>}
 
           {!checkResult && (
             <TextField
               fullWidth
-              label="회차 번호"
+              label={t('roundNumber')}
               type="number"
               value={roundInput}
               onChange={(e) => setRoundInput(e.target.value)}
-              placeholder="예: 1150"
+              placeholder={t('roundPlaceholder')}
             />
           )}
 
@@ -270,25 +272,25 @@ export default function CompareView({
                 icon={checkResult.winStatus === 'win' ? <CheckCircleIcon /> : <CancelIcon />}
               >
                 {checkResult.winStatus === 'win'
-                  ? `당첨입니다${checkResult.prizeRank ? ` (${checkResult.prizeRank})` : ''}`
-                  : '낙첨입니다'}
+                  ? t('won', { rank: checkResult.prizeRank ?? 'empty' })
+                  : t('lost')}
               </Alert>
 
               <Card variant="outlined">
                 <CardContent>
                   <Stack spacing={0.75}>
                     <Typography variant="body2">
-                      <strong>일치 번호 수:</strong> {checkResult.matchedCount}개
+                      <strong>{t('matchedCount')}:</strong> {checkResult.matchedCount}
                     </Typography>
                     <Typography variant="body2">
-                      <strong>보너스 일치:</strong> {checkResult.bonusMatched ? '예' : '아니오'}
+                      <strong>{t('bonusMatched')}:</strong> {checkResult.bonusMatched ? t('yes') : t('no')}
                     </Typography>
                     <Divider sx={{ my: 0.5 }} />
                     <Typography variant="body2">
-                      <strong>예측 번호:</strong> {checkResult.predNumbers.join(', ')}
+                      <strong>{t('predictedNumbers')}:</strong> {checkResult.predNumbers.join(', ')}
                     </Typography>
                     <Typography variant="body2">
-                      <strong>당첨 번호:</strong> {checkResult.winNumbers.join(', ')} + {checkResult.bonusNumber}
+                      <strong>{t('winningNumbers')}:</strong> {checkResult.winNumbers.join(', ')} + {checkResult.bonusNumber}
                     </Typography>
                   </Stack>
                 </CardContent>
@@ -297,11 +299,11 @@ export default function CompareView({
           )}
         </DialogContent>
         <DialogActions>
-          {checkResult && <Button onClick={() => setCheckResult(null)}>다시 확인</Button>}
-          <Button onClick={() => setWinCheckDialogOpen(false)}>닫기</Button>
+            {checkResult && <Button onClick={() => setCheckResult(null)}>{t('retry')}</Button>}
+            <Button onClick={() => setWinCheckDialogOpen(false)}>{t('close')}</Button>
           {!checkResult && (
             <Button onClick={handleCheckWin} variant="contained" disabled={checking || !roundInput}>
-              {checking ? <CircularProgress size={20} /> : '확인'}
+            {checking ? <CircularProgress size={20} /> : t('confirm')}
             </Button>
           )}
         </DialogActions>
