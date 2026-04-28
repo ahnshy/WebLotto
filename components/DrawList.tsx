@@ -18,15 +18,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import NumberBall from './NumberBall';
 import type { DrawRow } from '@/app/actions';
-
-const METHOD_LABELS: Record<string, string> = {
-  random: '난수',
-  stat: '통계',
-  pattern: '패턴',
-  lstm: '딥러닝',
-  random_forest: '머신러닝',
-  unknown: '미분류',
-};
+import { useTranslations } from 'next-intl';
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -96,6 +88,7 @@ export default function DrawList({
   onDeleteOne: (id: string) => void;
   ballSize: number;
 }) {
+  const t = useTranslations('DrawList');
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const size = isXs ? Math.min(ballSize, 20) : ballSize;
@@ -175,7 +168,7 @@ export default function DrawList({
                     border: (t) => `1px solid ${alpha(t.palette.primary.main, t.palette.mode === 'dark' ? 0.28 : 0.16)}`,
                   }}
                 >
-                  {METHOD_LABELS[draw.extraction_method ?? 'unknown'] ?? '미분류'}
+                  {t(`methods.${draw.extraction_method ?? 'unknown'}` as const)}
                 </Box>
 
                 {(draw.extraction_tags ?? []).map((tag) => (
@@ -206,7 +199,7 @@ export default function DrawList({
               </Typography>
             </Stack>
 
-            <Tooltip title="항목 삭제">
+            <Tooltip title={t('delete')}>
               <IconButton
                 edge="end"
                 size="small"
