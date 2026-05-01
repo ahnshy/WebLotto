@@ -10,8 +10,9 @@ import {
   Typography,
 } from '@mui/material';
 import PolylineIcon from '@mui/icons-material/Polyline';
+import {useLocale} from 'next-intl';
 import NumberBall from './NumberBall';
-import type { LottoRow } from '@/app/actions';
+import type {LottoRow} from '@/app/actions';
 
 type PatternResult = {
   numbers: number[];
@@ -19,7 +20,7 @@ type PatternResult = {
   expectedLowMidHigh: [number, number, number];
   expectedSum: number;
   expectedConsecutivePairs: number;
-  topCandidates: Array<{ number: number; score: number }>;
+  topCandidates: Array<{number: number; score: number}>;
   recentAnchorRounds: number[];
 };
 
@@ -34,8 +35,8 @@ function normalize(values: number[]) {
   return values.map((value) => (value - min) / (max - min));
 }
 
-function weightedPick(scored: Array<{ number: number; score: number }>, count: number) {
-  const pool = scored.map((item) => ({ ...item }));
+function weightedPick(scored: Array<{number: number; score: number}>, count: number) {
+  const pool = scored.map((item) => ({...item}));
   const selected: number[] = [];
 
   while (selected.length < count && pool.length > 0) {
@@ -70,7 +71,7 @@ function countLowMidHigh(numbers: number[]): [number, number, number] {
       else acc[2] += 1;
       return acc;
     },
-    [0, 0, 0]
+    [0, 0, 0],
   );
 }
 
@@ -88,13 +89,13 @@ function buildPatternPick(history: LottoRow[]): PatternResult {
   const medium = ordered.slice(-60);
   const long = ordered.slice(-160);
 
-  const recentFreq = Array.from({ length: 45 }, () => 0);
-  const mediumFreq = Array.from({ length: 45 }, () => 0);
-  const longFreq = Array.from({ length: 45 }, () => 0);
-  const rowBias = Array.from({ length: 9 }, () => 0);
-  const colBias = Array.from({ length: 5 }, () => 0);
-  const lastDigitBias = Array.from({ length: 10 }, () => 0);
-  const gapBias = Array.from({ length: 45 }, () => 0);
+  const recentFreq = Array.from({length: 45}, () => 0);
+  const mediumFreq = Array.from({length: 45}, () => 0);
+  const longFreq = Array.from({length: 45}, () => 0);
+  const rowBias = Array.from({length: 9}, () => 0);
+  const colBias = Array.from({length: 5}, () => 0);
+  const lastDigitBias = Array.from({length: 10}, () => 0);
+  const gapBias = Array.from({length: 45}, () => 0);
 
   recent.forEach((row, index) => {
     const weight = 1 + index / Math.max(recent.length, 1);
@@ -139,14 +140,13 @@ function buildPatternPick(history: LottoRow[]): PatternResult {
       const [low, mid, high] = countLowMidHigh(getMainNumbers(row));
       return [acc[0] + low, acc[1] + mid, acc[2] + high];
     },
-    [0, 0, 0]
+    [0, 0, 0],
   );
   const recentAverageSum = recent.reduce((sum, row) => sum + getMainNumbers(row).reduce((acc, number) => acc + number, 0), 0) / Math.max(recent.length, 1);
   const recentConsecutiveAverage = recent.reduce((sum, row) => sum + countConsecutivePairs(getMainNumbers(row)), 0) / Math.max(recent.length, 1);
 
   const expectedOdd = Math.min(5, Math.max(1, Math.round(recentOddAverage)));
-  const expectedLowMidHigh = recentLowMidHigh
-    .map((count) => Math.max(1, Math.round((count / Math.max(recent.length * 6, 1)) * 6))) as [number, number, number];
+  const expectedLowMidHigh = recentLowMidHigh.map((count) => Math.max(1, Math.round((count / Math.max(recent.length * 6, 1)) * 6))) as [number, number, number];
 
   while (expectedLowMidHigh[0] + expectedLowMidHigh[1] + expectedLowMidHigh[2] > 6) {
     const maxIndex = expectedLowMidHigh.indexOf(Math.max(...expectedLowMidHigh)) as 0 | 1 | 2;
@@ -161,7 +161,7 @@ function buildPatternPick(history: LottoRow[]): PatternResult {
   const targetSum = Math.round(recentAverageSum);
   const expectedConsecutivePairs = Math.min(3, Math.max(0, Math.round(recentConsecutiveAverage)));
 
-  const scores = Array.from({ length: 45 }, (_, index) => {
+  const scores = Array.from({length: 45}, (_, index) => {
     const number = index + 1;
     const rowIndex = Math.floor(index / 5);
     const colIndex = index % 5;
@@ -179,7 +179,7 @@ function buildPatternPick(history: LottoRow[]): PatternResult {
     if (number <= 10 || number >= 40) score += 0.08;
     if (number % 5 === 0 || number % 5 === 1) score += 0.06;
 
-    return { number, score };
+    return {number, score};
   }).sort((a, b) => b.score - a.score);
 
   const buckets = [
@@ -208,17 +208,14 @@ function buildPatternPick(history: LottoRow[]): PatternResult {
     const trial = weightedPick(
       candidatePool.map((number) => {
         const base = scores.find((item) => item.number === number)?.score ?? 0.1;
-        return { number, score: base };
+        return {number, score: base};
       }),
-      6
+      6,
     );
 
     const oddPenalty = Math.abs(countOdd(trial) - expectedOdd) * 1.6;
     const [low, mid, high] = countLowMidHigh(trial);
-    const rangePenalty =
-      Math.abs(low - expectedLowMidHigh[0]) +
-      Math.abs(mid - expectedLowMidHigh[1]) +
-      Math.abs(high - expectedLowMidHigh[2]);
+    const rangePenalty = Math.abs(low - expectedLowMidHigh[0]) + Math.abs(mid - expectedLowMidHigh[1]) + Math.abs(high - expectedLowMidHigh[2]);
     const sumPenalty = Math.abs(trial.reduce((sum, number) => sum + number, 0) - targetSum) / 8.5;
     const consecutivePenalty = Math.abs(countConsecutivePairs(trial) - expectedConsecutivePairs) * 1.25;
 
@@ -249,13 +246,14 @@ export default function PatternBasedPanel({
   ballSize: number;
   onGenerated: (numbers: number[]) => Promise<void>;
 }) {
+  const isEn = useLocale() === 'en';
   const [running, setRunning] = React.useState(false);
   const [error, setError] = React.useState('');
   const [result, setResult] = React.useState<PatternResult | null>(null);
 
   const handleGenerate = async () => {
     if (history.length < 20) {
-      setError('패턴기반 추출은 최소 20회차 이상의 당첨 이력이 필요합니다.');
+      setError(isEn ? 'Pattern-based draw requires at least 20 rounds of winning history.' : '패턴기반 추출은 최소 20회차 이상의 당첨 이력이 필요합니다.');
       return;
     }
 
@@ -278,18 +276,13 @@ export default function PatternBasedPanel({
       <Card variant="outlined">
         <CardContent>
           <Stack spacing={1.5}>
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              justifyContent="space-between"
-              alignItems={{ xs: 'stretch', sm: 'center' }}
-              spacing={1}
-            >
+            <Stack direction={{xs: 'column', sm: 'row'}} justifyContent="space-between" alignItems={{xs: 'stretch', sm: 'center'}} spacing={1}>
               <Stack spacing={0.25}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                  패턴기반 추출
+                <Typography variant="subtitle2" sx={{fontWeight: 700}}>
+                  {isEn ? 'Pattern-based Draw' : '패턴기반 추출'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  최근 당첨 패턴의 홀짝, 구간 분포, 번호 배치 흐름을 분석해 금주 예상 패턴에 맞는 번호를 추출합니다.
+                  {isEn ? 'Analyzes recent winning patterns such as odd-even balance, range distribution, and number placement to build this week’s pick.' : '최근 당첨 패턴의 홀짝, 구간 분포, 번호 배치 흐름을 분석해 금주 예상 패턴에 맞는 번호를 추출합니다.'}
                 </Typography>
               </Stack>
               <Button
@@ -297,47 +290,47 @@ export default function PatternBasedPanel({
                 startIcon={<PolylineIcon />}
                 onClick={handleGenerate}
                 disabled={running}
-                sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}
+                sx={{alignSelf: {xs: 'stretch', sm: 'auto'}}}
               >
-                {running ? '패턴 분석 중...' : '패턴기반 추출'}
+                {running ? (isEn ? 'Analyzing pattern...' : '패턴 분석 중...') : (isEn ? 'Pattern-based Draw' : '패턴기반 추출')}
               </Button>
             </Stack>
 
             <Alert severity="info">
-              최근 패턴 보드 흐름과 누적 당첨 패턴을 합쳐 이번 주 예상 패턴을 만들고, 그 패턴에 맞게 번호를 조합합니다.
+              {isEn ? 'Combines recent pattern-board flow with cumulative winning patterns to assemble numbers that match the expected pattern this week.' : '최근 패턴 보드 흐름과 누적 당첨 패턴을 합쳐 이번 주 예상 패턴을 만들고 그 패턴에 맞게 번호를 조합합니다.'}
             </Alert>
 
             {error && <Alert severity="error">{error}</Alert>}
 
             {result && (
               <Stack spacing={1.25}>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                  추출 번호
+                <Typography variant="body2" sx={{fontWeight: 700}}>
+                  {isEn ? 'Generated Numbers' : '추출 번호'}
                 </Typography>
-                <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+                <Stack direction="row" sx={{flexWrap: 'wrap', gap: 0.5}}>
                   {result.numbers.map((n) => (
                     <NumberBall key={n} n={n} size={ballSize} mr={0} />
                   ))}
                 </Stack>
 
                 <Typography variant="body2" color="text.secondary">
-                  예상 홀짝 패턴: 홀수 {result.expectedOdd} / 짝수 {6 - result.expectedOdd}
+                  {isEn ? `Expected odd-even pattern: odd ${result.expectedOdd} / even ${6 - result.expectedOdd}` : `예상 홀짝 패턴: 홀수 ${result.expectedOdd} / 짝수 ${6 - result.expectedOdd}`}
                 </Typography>
 
                 <Typography variant="body2" color="text.secondary">
-                  예상 구간 패턴: 저구간 {result.expectedLowMidHigh[0]}, 중구간 {result.expectedLowMidHigh[1]}, 고구간 {result.expectedLowMidHigh[2]}
+                  {isEn ? `Expected range pattern: low ${result.expectedLowMidHigh[0]}, mid ${result.expectedLowMidHigh[1]}, high ${result.expectedLowMidHigh[2]}` : `예상 구간 패턴: 저구간 ${result.expectedLowMidHigh[0]}, 중구간 ${result.expectedLowMidHigh[1]}, 고구간 ${result.expectedLowMidHigh[2]}`}
                 </Typography>
 
                 <Typography variant="body2" color="text.secondary">
-                  예상 번호합: 약 {result.expectedSum}, 예상 연속번호 쌍: {result.expectedConsecutivePairs}
+                  {isEn ? `Expected total sum: about ${result.expectedSum}, expected consecutive pairs ${result.expectedConsecutivePairs}` : `예상 번호합: 약 ${result.expectedSum}, 예상 연속번호 수 ${result.expectedConsecutivePairs}`}
                 </Typography>
 
                 <Typography variant="body2" color="text.secondary">
-                  상위 후보: {result.topCandidates.map((item) => `${item.number}(${item.score.toFixed(2)})`).join(', ')}
+                  {isEn ? 'Top candidates' : '상위 후보'}: {result.topCandidates.map((item) => `${item.number}(${item.score.toFixed(2)})`).join(', ')}
                 </Typography>
 
                 <Typography variant="caption" color="text.secondary">
-                  기준 회차: 최근 패턴 앵커 {result.recentAnchorRounds.join(', ')}회차
+                  {isEn ? `Anchor rounds: recent pattern anchors ${result.recentAnchorRounds.join(', ')}` : `기준 회차: 최근 패턴 앵커 ${result.recentAnchorRounds.join(', ')}회차`}
                 </Typography>
               </Stack>
             )}
