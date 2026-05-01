@@ -16,6 +16,7 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
+import {useLocale} from "next-intl";
 import NumberBall from "./NumberBall";
 
 type BallState = "drum" | "ejecting" | "winner";
@@ -746,6 +747,7 @@ function drawMachineScene(
   }
 }
 export default function LottoMachine() {
+  const isEn = useLocale() === "en";
   const theme = useTheme();
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
@@ -1069,7 +1071,7 @@ export default function LottoMachine() {
     };
   }, [beginEjection, finalizeEjection, theme.palette.mode]);
   const buttonLabel =
-    winners.length >= DRAW_COUNT ? "다시 추첨" : phase === "drawing" ? "추첨 중..." : "추첨 시작";
+    winners.length >= DRAW_COUNT ? (isEn ? "Draw Again" : "다시 추첨") : phase === "drawing" ? (isEn ? "Drawing..." : "추첨 중...") : (isEn ? "Start Draw" : "추첨 시작");
 
   return (
     <Stack spacing={2.25}>
@@ -1098,15 +1100,15 @@ export default function LottoMachine() {
           {phase === "complete" ? <SlowMotionVideoRounded color="success" /> : <AutorenewRounded color={phase === "drawing" ? "warning" : "inherit"} />}
           <Typography variant="body2" sx={{ fontWeight: 700 }}>
             {phase === "idle"
-              ? "대기 중"
+              ? (isEn ? "Idle" : "대기 중")
               : phase === "mixing"
-                ? "공 섞는 중"
+                ? (isEn ? "Mixing Balls" : "공 섞는 중")
                 : phase === "drawing"
-                  ? "당첨공 배출 중"
-                  : "추첨 완료"}
+                  ? (isEn ? "Releasing Winners" : "당첨공 배출 중")
+                  : (isEn ? "Draw Complete" : "추첨 완료")}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            당첨공 {winners.length} / {DRAW_COUNT}
+            {isEn ? `Winning Balls ${winners.length} / ${DRAW_COUNT}` : `당첨공 ${winners.length} / ${DRAW_COUNT}`}
           </Typography>
         </Stack>
 
@@ -1126,7 +1128,7 @@ export default function LottoMachine() {
             startIcon={<RestartAltRounded />}
             onClick={() => resetMachine()}
           >
-            초기화
+            {isEn ? "Reset" : "초기화"}
           </Button>
         </Stack>
       </Stack>
@@ -1146,7 +1148,7 @@ export default function LottoMachine() {
       >
         <Stack spacing={1.25}>
           <Typography variant="subtitle1" fontWeight={800}>
-            당첨 결과
+            {isEn ? "Draw Result" : "당첨 결과"}
           </Typography>
           <Stack spacing={1}>
             <Stack
@@ -1161,7 +1163,7 @@ export default function LottoMachine() {
                 winners.map((value) => <NumberBall key={`current-${value}`} n={value} size={36} mr={0} />)
               ) : (
                 <Typography variant="body2" color="text.secondary">
-                  아직 추첨된 공이 없습니다.
+                  {isEn ? "No balls drawn yet." : "아직 추첨된 공이 없습니다."}
                 </Typography>
               )}
             </Stack>
@@ -1184,7 +1186,7 @@ export default function LottoMachine() {
                     }}
                   >
                     <Typography variant="body2" sx={{ minWidth: 56, fontWeight: 700 }}>
-                      {entry.round}회차
+                      {isEn ? `Round ${entry.round}` : `${entry.round}회차`}
                     </Typography>
                     <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
                       {entry.numbers.map((n, index) => (
