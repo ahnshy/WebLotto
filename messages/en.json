@@ -4,7 +4,7 @@
     "light": "Light",
     "dark": "Dark",
     "night": "Night",
-    "googleLogin": "Sign in with Google"
+    "googleLogin": "Google Login"
   },
   "LocaleSwitcher": {
     "label": "Language"
