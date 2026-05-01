@@ -46,11 +46,11 @@ function OmrBottom() {
         position: 'absolute',
         left: '34mm',
         right: '8.5mm',
-        bottom: '1.4mm',
-        height: '4.3mm',
+        bottom: '1.2mm',
+        height: '4.8mm',
         display: 'grid',
         gridTemplateColumns: 'repeat(38, 1fr)',
-        gap: '1mm',
+        gap: '0.9mm',
         alignItems: 'end',
       }}
     >
@@ -58,8 +58,8 @@ function OmrBottom() {
         <Box
           key={`bottom-${index}`}
           sx={{
-            height: index % 2 === 0 ? '4.3mm' : '2.7mm',
-            bgcolor: '#222',
+            height: index % 2 === 0 ? '4.8mm' : '3mm',
+            bgcolor: '#111',
           }}
         />
       ))}
@@ -72,21 +72,21 @@ function OmrRight() {
     <Box
       sx={{
         position: 'absolute',
-        top: '2.1mm',
-        right: '1.7mm',
+        top: '2mm',
+        right: '1.6mm',
         bottom: '6.6mm',
-        width: '4.6mm',
+        width: '4.8mm',
         display: 'grid',
-        gridTemplateRows: '3mm repeat(12, 1fr) 3mm',
+        gridTemplateRows: '2.5mm repeat(12, 1fr) 2.5mm',
         justifyItems: 'center',
         alignItems: 'center',
       }}
     >
-      <Box sx={{ width: '2mm', height: '2mm', bgcolor: '#222' }} />
+      <Box sx={{ width: '2.2mm', height: '2.2mm', bgcolor: '#111' }} />
       {Array.from({ length: 12 }).map((_, index) => (
-        <Box key={`right-${index}`} sx={{ width: '2mm', height: '4mm', bgcolor: '#222' }} />
+        <Box key={`right-${index}`} sx={{ width: '2.2mm', height: '4.1mm', bgcolor: '#111' }} />
       ))}
-      <Box sx={{ width: '2mm', height: '2mm', bgcolor: '#222' }} />
+      <Box sx={{ width: '2.2mm', height: '2.2mm', bgcolor: '#111' }} />
     </Box>
   );
 }
@@ -113,10 +113,9 @@ function LeftBrandPanel() {
             fontWeight: 900,
             fontSize: '6.3mm',
             lineHeight: 1,
-            letterSpacing: '0.02em',
           }}
         >
-          Lotto6/45
+          Lotto 6/45
         </Typography>
         <Typography
           sx={{
@@ -135,23 +134,39 @@ function LeftBrandPanel() {
   );
 }
 
-function NumberBox({ number, active }: { number: number; active: boolean }) {
+function NumberBubble({ number, active }: { number: number; active: boolean }) {
   return (
     <Box
       sx={{
-        width: '3.1mm',
-        height: '3.7mm',
-        border: '0.18mm solid #bf8f89',
-        bgcolor: active ? '#dc645c' : '#fff',
-        color: active ? '#fff' : '#9c6762',
+        width: '3.4mm',
+        height: '3.8mm',
         display: 'grid',
         placeItems: 'center',
-        fontSize: '1.88mm',
-        fontWeight: active ? 800 : 600,
-        lineHeight: 1,
+        position: 'relative',
       }}
     >
-      {number}
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: '0.15mm',
+          borderRadius: '999px',
+          border: '0.18mm solid #ba8d86',
+          bgcolor: active ? '#2f2a28' : '#fff',
+        }}
+      />
+      <Typography
+        component="span"
+        sx={{
+          position: 'relative',
+          zIndex: 1,
+          color: active ? '#fff' : '#9c6762',
+          fontSize: '1.7mm',
+          fontWeight: 700,
+          lineHeight: 1,
+        }}
+      >
+        {number}
+      </Typography>
     </Box>
   );
 }
@@ -165,7 +180,7 @@ function PickColumn({ label, picked }: { label: string; picked: number[] | undef
         height: '100%',
         border: '0.2mm solid #d6bbb4',
         display: 'grid',
-        gridTemplateRows: '5.8mm 1fr 8.6mm',
+        gridTemplateRows: '5.8mm 1fr 9mm',
         bgcolor: '#fff',
       }}
     >
@@ -194,37 +209,37 @@ function PickColumn({ label, picked }: { label: string; picked: number[] | undef
         </Box>
       </Box>
 
-      <Box sx={{ px: '0.85mm', pt: '0.8mm', pb: '0.5mm', display: 'grid', gap: '0.75mm', alignContent: 'start' }}>
+      <Box sx={{ px: '0.75mm', pt: '0.7mm', pb: '0.5mm', display: 'grid', gap: '0.6mm', alignContent: 'start' }}>
         {NUMBER_ROWS.map((row, rowIndex) => (
           <Box
             key={`${label}-${rowIndex}`}
             sx={{
               display: 'grid',
-              gridTemplateColumns: `repeat(${row.length}, 3.1mm)`,
-              gap: '0.66mm',
+              gridTemplateColumns: `repeat(${row.length}, 3.4mm)`,
+              gap: '0.45mm',
               justifyContent: 'flex-start',
             }}
           >
             {row.map((number) => (
-              <NumberBox key={`${label}-${number}`} number={number} active={selected.has(number)} />
+              <NumberBubble key={`${label}-${number}`} number={number} active={selected.has(number)} />
             ))}
           </Box>
         ))}
       </Box>
 
       <Box sx={{ px: '0.9mm', pt: '0.6mm', pb: '0.7mm', display: 'grid', alignContent: 'space-between' }}>
-        <Typography sx={{ color: '#bf746d', fontSize: '1.95mm', fontWeight: 700, lineHeight: 1.2 }}>
-          자동 및 반자동 선택
+        <Typography sx={{ color: '#bf746d', fontSize: '1.8mm', fontWeight: 700, lineHeight: 1.2 }}>
+          자동 / 반자동 선택
         </Typography>
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 2.3mm', alignItems: 'center' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 2.4mm', alignItems: 'center' }}>
           <Box sx={{ borderBottom: '0.16mm solid #dcc8c2', height: '1px' }} />
-          <Box sx={{ justifySelf: 'end', width: '1.7mm', height: '1.7mm', border: '0.18mm solid #bf8f89' }} />
+          <Box sx={{ justifySelf: 'end', width: '1.8mm', height: '1.8mm', border: '0.18mm solid #bf8f89' }} />
         </Box>
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 2.3mm', alignItems: 'center' }}>
-          <Typography sx={{ justifySelf: 'end', color: '#bf746d', fontSize: '2.05mm', fontWeight: 700, lineHeight: 1 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 2.4mm', alignItems: 'center' }}>
+          <Typography sx={{ justifySelf: 'end', color: '#bf746d', fontSize: '1.9mm', fontWeight: 700, lineHeight: 1 }}>
             취소
           </Typography>
-          <Box sx={{ justifySelf: 'end', width: '1.7mm', height: '1.7mm', border: '0.18mm solid #bf8f89' }} />
+          <Box sx={{ justifySelf: 'end', width: '1.8mm', height: '1.8mm', border: '0.18mm solid #bf8f89' }} />
         </Box>
       </Box>
     </Box>
@@ -249,12 +264,12 @@ function RightInfoPanel() {
           writingMode: 'vertical-rl',
           transform: 'rotate(180deg)',
           color: '#6c6258',
-          fontSize: '1.72mm',
+          fontSize: '1.7mm',
           lineHeight: 1.45,
           textAlign: 'center',
         }}
       >
-        100% 배율로 시험 인쇄 후 정렬 상태를 확인하세요.
+        실제 출력 시 배율 100%를 사용하고 여백 없이 인쇄하세요.
       </Typography>
     </Box>
   );
@@ -277,17 +292,24 @@ export default async function LottoPrintPage({
           margin: 0;
         }
         html, body {
+          width: ${SLIP_WIDTH_MM}mm;
+          height: ${SLIP_HEIGHT_MM}mm;
           margin: 0;
           padding: 0;
           background: #f3efe8;
           overflow: hidden;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
         }
         * {
           box-sizing: border-box;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
         }
         @media screen {
           body {
-            min-height: 100vh;
+            min-width: ${SLIP_WIDTH_MM}mm;
+            min-height: ${SLIP_HEIGHT_MM}mm;
           }
         }
         @media print {
@@ -299,10 +321,10 @@ export default async function LottoPrintPage({
 
       <Box
         sx={{
-          minHeight: '100vh',
+          width: `${SLIP_WIDTH_MM}mm`,
+          height: `${SLIP_HEIGHT_MM}mm`,
           display: 'grid',
-          placeItems: 'center',
-          p: 0,
+          placeItems: 'stretch',
         }}
       >
         <Box
@@ -331,7 +353,7 @@ export default async function LottoPrintPage({
               height: '100%',
               display: 'grid',
               gridTemplateColumns: '27mm repeat(5, minmax(0, 1fr)) 6mm',
-              gap: '1.8mm',
+              gap: '1.6mm',
               alignItems: 'stretch',
             }}
           >
