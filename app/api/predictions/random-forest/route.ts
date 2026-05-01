@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         success: true,
-        artifact: await buildRandomForestModelArtifact(true),
+        artifact: await buildRandomForestModelArtifact(false),
         status: await getRandomForestStatus(),
       });
     }
