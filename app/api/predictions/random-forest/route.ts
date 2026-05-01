@@ -8,6 +8,11 @@ import {
 } from '@/lib/lottoAiServer';
 import { isAdminEmail, stringifyError } from '@/lib/admin';
 
+function isLocalBuildRequest(request: Request) {
+  const host = request.headers.get('host') ?? '';
+  return host.startsWith('localhost:') || host.startsWith('127.0.0.1:');
+}
+
 export async function GET() {
   try {
     await warmRandomForestModel();
@@ -26,7 +31,7 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => null);
 
     if (searchParams.get('mode') === 'build') {
-      if (!isAdminEmail(body?.email)) {
+      if (!isLocalBuildRequest(request) && !isAdminEmail(body?.email)) {
         return NextResponse.json({ error: '관리자만 머신러닝 모델을 생성할 수 있습니다.' }, { status: 403 });
       }
 
