@@ -13,8 +13,9 @@ import {
   Typography,
 } from '@mui/material';
 import TuneIcon from '@mui/icons-material/Tune';
+import {useLocale} from 'next-intl';
 import NumberBall from './NumberBall';
-import type { LottoRow } from '@/app/actions';
+import type {LottoRow} from '@/app/actions';
 
 export type StatOption =
   | 'hot_frequency'
@@ -24,31 +25,22 @@ export type StatOption =
   | 'hot_focus'
   | 'cold_focus';
 
-export const STAT_OPTION_LABELS: Record<StatOption, { title: string; description: string }> = {
-  hot_frequency: {
-    title: '빈출 번호',
-    description: '전체 누적 당첨 이력에서 자주 나온 번호 가중치 반영',
-  },
-  cold_missing: {
-    title: '미출현 번호',
-    description: '최근 오래 나오지 않은 번호 가중치 반영',
-  },
-  range_ratio: {
-    title: '번호대 비율',
-    description: '1-15 / 16-30 / 31-45 구간 비율을 최근 통계에 맞춰 반영',
-  },
-  monthly_hot: {
-    title: '월별 다수출현',
-    description: '현재 월에 강세였던 번호 빈도를 반영',
-  },
-  hot_focus: {
-    title: '다수출현 위주',
-    description: '상위 빈출 번호 그룹을 더 강하게 우선',
-  },
-  cold_focus: {
-    title: '비출현 번호 기반',
-    description: '장기 미출현 번호 그룹을 더 강하게 우선',
-  },
+export const STAT_OPTION_LABELS: Record<StatOption, {title: string; description: string}> = {
+  hot_frequency: {title: '빈출 번호', description: '전체 누적 당첨 이력에서 자주 나온 번호 가중치 반영'},
+  cold_missing: {title: '미출현 번호', description: '최근 오래 나오지 않은 번호 가중치 반영'},
+  range_ratio: {title: '번호대 비율', description: '1-15 / 16-30 / 31-45 구간 비율을 최근 통계에 맞춰 반영'},
+  monthly_hot: {title: '월별 다수출현', description: '현재 월에 강세였던 번호 빈도를 반영'},
+  hot_focus: {title: '다수출현 위주', description: '상위 빈출 번호 그룹을 더 강하게 우선'},
+  cold_focus: {title: '비출현 번호 기반', description: '장기 미출현 번호 그룹을 더 강하게 우선'},
+};
+
+export const STAT_OPTION_LABELS_EN: Record<StatOption, {title: string; description: string}> = {
+  hot_frequency: {title: 'Hot Numbers', description: 'Weights numbers that appeared frequently across all winning history.'},
+  cold_missing: {title: 'Missing Numbers', description: 'Weights numbers that have not appeared for a long time recently.'},
+  range_ratio: {title: 'Range Ratio', description: 'Reflects recent distribution across 1-15 / 16-30 / 31-45.'},
+  monthly_hot: {title: 'Monthly Hot', description: 'Reflects numbers that were strong in the current month.'},
+  hot_focus: {title: 'Focus on Hot', description: 'Pushes high-frequency number groups more aggressively.'},
+  cold_focus: {title: 'Focus on Missing', description: 'Pushes long-missing number groups more aggressively.'},
 };
 
 const DEFAULT_OPTIONS: StatOption[] = ['hot_frequency', 'range_ratio'];
@@ -64,8 +56,8 @@ function normalize(values: number[]): number[] {
   return values.map((value) => (value - min) / (max - min));
 }
 
-function weightedPick(scored: Array<{ number: number; score: number }>, count: number) {
-  const pool = scored.map((item) => ({ ...item }));
+function weightedPick(scored: Array<{number: number; score: number}>, count: number) {
+  const pool = scored.map((item) => ({...item}));
   const selected: number[] = [];
 
   while (selected.length < count && pool.length > 0) {
@@ -92,9 +84,9 @@ function buildStatistics(history: LottoRow[]) {
   const ordered = [...history].sort((a, b) => a.round - b.round);
   const latest = ordered[ordered.length - 1];
   const currentMonth = latest ? new Date(latest.draw_date).getMonth() + 1 : new Date().getMonth() + 1;
-  const frequency = Array.from({ length: 45 }, () => 0);
-  const monthlyFrequency = Array.from({ length: 45 }, () => 0);
-  const lastSeen = Array.from({ length: 45 }, () => -1);
+  const frequency = Array.from({length: 45}, () => 0);
+  const monthlyFrequency = Array.from({length: 45}, () => 0);
+  const lastSeen = Array.from({length: 45}, () => -1);
   const rangeCounts = [0, 0, 0];
 
   ordered.forEach((row, index) => {
@@ -147,7 +139,7 @@ function buildStatistics(history: LottoRow[]) {
 
 function buildPick(history: LottoRow[], options: StatOption[]) {
   const stats = buildStatistics(history);
-  const scores = Array.from({ length: 45 }, (_, index) => {
+  const scores = Array.from({length: 45}, (_, index) => {
     const number = index + 1;
     let score = 0.1;
 
@@ -157,7 +149,7 @@ function buildPick(history: LottoRow[], options: StatOption[]) {
     if (options.includes('hot_focus')) score += stats.normalizedFrequency[index] * 1.8;
     if (options.includes('cold_focus')) score += stats.normalizedMissing[index] * 1.8;
 
-    return { number, score };
+    return {number, score};
   }).sort((a, b) => b.score - a.score);
 
   let picked = weightedPick(scores, 6);
@@ -201,22 +193,20 @@ export default function StatBasedPanel({
   ballSize: number;
   onGenerated: (numbers: number[], options: StatOption[]) => Promise<void>;
 }) {
+  const isEn = useLocale() === 'en';
+  const optionLabels = isEn ? STAT_OPTION_LABELS_EN : STAT_OPTION_LABELS;
   const [selectedOptions, setSelectedOptions] = React.useState<StatOption[]>(DEFAULT_OPTIONS);
   const [running, setRunning] = React.useState(false);
   const [error, setError] = React.useState('');
   const [result, setResult] = React.useState<ReturnType<typeof buildPick> | null>(null);
 
   const toggleOption = (option: StatOption) => {
-    setSelectedOptions((prev) => (
-      prev.includes(option)
-        ? prev.filter((item) => item !== option)
-        : [...prev, option]
-    ));
+    setSelectedOptions((prev) => (prev.includes(option) ? prev.filter((item) => item !== option) : [...prev, option]));
   };
 
   const handleGenerate = async () => {
     if (selectedOptions.length === 0) {
-      setError('통계 기준을 1개 이상 선택해 주세요.');
+      setError(isEn ? 'Select at least one statistical criterion.' : '통계 기준을 1개 이상 선택해 주세요.');
       return;
     }
 
@@ -239,13 +229,13 @@ export default function StatBasedPanel({
       <Card variant="outlined">
         <CardContent>
           <Stack spacing={1.5}>
-            <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} spacing={1}>
+            <Stack direction={{xs: 'column', sm: 'row'}} justifyContent="space-between" alignItems={{xs: 'stretch', sm: 'center'}} spacing={1}>
               <Stack spacing={0.25}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                  통계기반 추출
+                <Typography variant="subtitle2" sx={{fontWeight: 700}}>
+                  {isEn ? 'Stat-based Draw' : '통계기반 추출'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  누적 당첨 통계와 월별/빈도/미출현 패턴을 조합해 번호를 추출합니다.
+                  {isEn ? 'Generates numbers by combining cumulative winning stats with monthly, frequency, and missing-number patterns.' : '누적 당첨 통계와 월별/빈도/미출현 패턴을 조합해 번호를 추출합니다.'}
                 </Typography>
               </Stack>
               <Button
@@ -253,29 +243,24 @@ export default function StatBasedPanel({
                 startIcon={<TuneIcon />}
                 onClick={handleGenerate}
                 disabled={running}
-                sx={{ alignSelf: { xs: 'stretch', sm: 'auto' } }}
+                sx={{alignSelf: {xs: 'stretch', sm: 'auto'}}}
               >
-                {running ? '추출 중...' : '통계기반 추출'}
+                {running ? (isEn ? 'Generating...' : '추출 중...') : (isEn ? 'Stat-based Draw' : '통계기반 추출')}
               </Button>
             </Stack>
 
             <Alert severity="info">
-              하나 이상 선택할 수 있고, 여러 통계 기준을 함께 조합해서 번호를 생성합니다.
+              {isEn ? 'You can choose one or more criteria and combine multiple statistical signals together.' : '하나 이상 선택할 수 있고, 여러 통계 기준을 함께 조합해서 번호를 생성합니다.'}
             </Alert>
 
             <FormGroup>
-              {Object.entries(STAT_OPTION_LABELS).map(([key, value]) => (
+              {Object.entries(optionLabels).map(([key, value]) => (
                 <FormControlLabel
                   key={key}
-                  control={(
-                    <Checkbox
-                      checked={selectedOptions.includes(key as StatOption)}
-                      onChange={() => toggleOption(key as StatOption)}
-                    />
-                  )}
+                  control={<Checkbox checked={selectedOptions.includes(key as StatOption)} onChange={() => toggleOption(key as StatOption)} />}
                   label={(
                     <Stack spacing={0.1}>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>{value.title}</Typography>
+                      <Typography variant="body2" sx={{fontWeight: 700}}>{value.title}</Typography>
                       <Typography variant="caption" color="text.secondary">{value.description}</Typography>
                     </Stack>
                   )}
@@ -287,25 +272,25 @@ export default function StatBasedPanel({
 
             {result && (
               <Stack spacing={1.25}>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                  추출 번호
+                <Typography variant="body2" sx={{fontWeight: 700}}>
+                  {isEn ? 'Generated Numbers' : '추출 번호'}
                 </Typography>
-                <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+                <Stack direction="row" sx={{flexWrap: 'wrap', gap: 0.5}}>
                   {result.numbers.map((n) => (
                     <NumberBall key={n} n={n} size={ballSize} mr={0} />
                   ))}
                 </Stack>
 
                 <Typography variant="body2" color="text.secondary">
-                  선택 기준: {selectedOptions.map((item) => STAT_OPTION_LABELS[item].title).join(', ')}
+                  {isEn ? 'Selected criteria' : '선택 기준'}: {selectedOptions.map((item) => optionLabels[item].title).join(', ')}
                 </Typography>
 
                 <Typography variant="body2" color="text.secondary">
-                  상위 후보: {result.topCandidates.map((item) => `${item.number}(${item.score.toFixed(2)})`).join(', ')}
+                  {isEn ? 'Top candidates' : '상위 후보'}: {result.topCandidates.map((item) => `${item.number}(${item.score.toFixed(2)})`).join(', ')}
                 </Typography>
 
                 <Typography variant="caption" color="text.secondary">
-                  {`${result.stats.rounds.toLocaleString()}회차 누적 통계 사용, ${result.stats.currentMonth}월 강세 패턴 반영`}
+                  {isEn ? `${result.stats.rounds.toLocaleString()} rounds used, with monthly strength patterns for month ${result.stats.currentMonth}` : `${result.stats.rounds.toLocaleString()}회차 누적 통계 사용, ${result.stats.currentMonth}월 강세 패턴 반영`}
                 </Typography>
               </Stack>
             )}
