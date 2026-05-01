@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import * as tf from '@tensorflow/tfjs';
 import { RandomForestClassifier } from 'ml-random-forest';
@@ -23,6 +23,15 @@ function lstmFileName(latestRound: number) {
 
 function randomForestFileName(latestRound: number) {
   return `1_${latestRound}_RandomForest.model`;
+}
+
+async function fileExists(filePath: string) {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function ensureModelDir() {
@@ -60,6 +69,12 @@ export async function loadLstmModelFromDisk(latestRound: number): Promise<Prepar
   }
 }
 
+export async function getExistingLstmModelPath(latestRound: number): Promise<string | null> {
+  await ensureModelDir();
+  const filePath = path.join(modelDir, lstmFileName(latestRound));
+  return (await fileExists(filePath)) ? filePath : null;
+}
+
 export async function saveRandomForestModelToDisk(prepared: PreparedRandomForestModel) {
   await ensureModelDir();
   const fileName = randomForestFileName(prepared.latestRound);
@@ -80,4 +95,10 @@ export async function loadRandomForestModelFromDisk(latestRound: number): Promis
   } catch {
     return null;
   }
+}
+
+export async function getExistingRandomForestModelPath(latestRound: number): Promise<string | null> {
+  await ensureModelDir();
+  const filePath = path.join(modelDir, randomForestFileName(latestRound));
+  return (await fileExists(filePath)) ? filePath : null;
 }
