@@ -13,6 +13,8 @@ import {
   type PreparedRandomForestModel,
 } from '@/lib/lottoRandomForest';
 import {
+  getExistingLstmModelPath,
+  getExistingRandomForestModelPath,
   loadLstmModelFromDisk,
   loadRandomForestModelFromDisk,
   saveLstmModelToDisk,
@@ -323,7 +325,19 @@ export async function generateRandomForestPrediction() {
   return predictWithPreparedRandomForest(prepared);
 }
 
-export async function buildLstmModelArtifact(force = true) {
+export async function buildLstmModelArtifact(force = false) {
+  const latestRound = await fetchLatestRound();
+  if (!force) {
+    const filePath = await getExistingLstmModelPath(latestRound);
+    if (filePath) {
+      return {
+        filePath,
+        latestRound,
+        trainedAt: null,
+      };
+    }
+  }
+
   const prepared = await ensurePreparedLstmModel(force);
   const filePath = await saveLstmModelToDisk(prepared);
   return {
@@ -333,7 +347,19 @@ export async function buildLstmModelArtifact(force = true) {
   };
 }
 
-export async function buildRandomForestModelArtifact(force = true) {
+export async function buildRandomForestModelArtifact(force = false) {
+  const latestRound = await fetchLatestRound();
+  if (!force) {
+    const filePath = await getExistingRandomForestModelPath(latestRound);
+    if (filePath) {
+      return {
+        filePath,
+        latestRound,
+        trainedAt: null,
+      };
+    }
+  }
+
   const prepared = await ensurePreparedRandomForestModel(force);
   const filePath = await saveRandomForestModelToDisk(prepared);
   return {
