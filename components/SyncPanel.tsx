@@ -92,6 +92,7 @@ async function syncRangeInBatches(
 export default function SyncPanel() {
   const isEn = useLocale() === 'en';
   const {email, isAdmin, loading: authLoading} = useAuth();
+  const isLocalhost = typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname);
   const [start, setStart] = React.useState(1);
   const [end, setEnd] = React.useState<number | null>(null);
   const [progress, setProgress] = React.useState(0);
@@ -102,7 +103,7 @@ export default function SyncPanel() {
   const [currentBatch, setCurrentBatch] = React.useState<{start: number; end: number} | null>(null);
   const [buildingModel, setBuildingModel] = React.useState<'lstm' | 'randomForest' | null>(null);
   const syncDisabled = running || !end || status === 'loading' || authLoading || !isAdmin;
-  const modelDisabled = buildingModel !== null || running || authLoading || !isAdmin;
+  const modelDisabled = buildingModel !== null || running || authLoading || (!isAdmin && !isLocalhost);
   const adminTooltip = isEn ? 'Admin only.' : '관리자만 가능한 기능입니다.';
 
   React.useEffect(() => {
@@ -173,7 +174,6 @@ export default function SyncPanel() {
   };
 
   const handleBuildModel = async (type: 'lstm' | 'randomForest') => {
-    if (!email) return;
     setBuildingModel(type);
 
     try {
@@ -219,7 +219,7 @@ export default function SyncPanel() {
           <Stack direction={{xs: 'column', sm: 'row'}} spacing={1.5} alignItems="flex-start" sx={{mb: 2, flexWrap: 'wrap'}}>
             <TextField size="small" label={isEn ? 'Start Round' : '시작 회차'} type="number" value={start} onChange={(e) => setStart(Math.max(1, parseInt(e.target.value || '1', 10)))} sx={{width: 140}} disabled={running || authLoading || !isAdmin} />
             <TextField size="small" label={isEn ? 'End Round' : '종료 회차'} type="number" value={end ?? ''} onChange={(e) => setEnd(parseInt(e.target.value || '1', 10))} sx={{width: 140}} disabled={running || authLoading || !isAdmin} />
-            <Tooltip title={!isAdmin ? adminTooltip : ''} disableHoverListener={isAdmin}>
+            <Tooltip title={!isAdmin && !isLocalhost ? adminTooltip : ''} disableHoverListener={isAdmin || isLocalhost}>
               <span>
                 <Button variant="contained" onClick={onRun} disabled={syncDisabled} sx={{mt: 0.5}}>
                   {running ? (isEn ? 'Syncing...' : '동기화 중...') : (isEn ? 'Start Sync' : '동기화 시작')}
@@ -287,14 +287,14 @@ export default function SyncPanel() {
           </Alert>
 
           <Stack direction={{xs: 'column', sm: 'row'}} spacing={1.5} alignItems="flex-start" sx={{flexWrap: 'wrap'}}>
-            <Tooltip title={!isAdmin ? adminTooltip : ''} disableHoverListener={isAdmin}>
+            <Tooltip title={!isAdmin && !isLocalhost ? adminTooltip : ''} disableHoverListener={isAdmin || isLocalhost}>
               <span>
                 <Button variant="outlined" onClick={() => void handleBuildModel('lstm')} disabled={modelDisabled}>
                   {buildingModel === 'lstm' ? (isEn ? 'Building...' : '생성 중...') : (isEn ? 'Build Deep Learning Model' : '딥러닝 모델 생성')}
                 </Button>
               </span>
             </Tooltip>
-            <Tooltip title={!isAdmin ? adminTooltip : ''} disableHoverListener={isAdmin}>
+            <Tooltip title={!isAdmin && !isLocalhost ? adminTooltip : ''} disableHoverListener={isAdmin || isLocalhost}>
               <span>
                 <Button variant="outlined" onClick={() => void handleBuildModel('randomForest')} disabled={modelDisabled}>
                   {buildingModel === 'randomForest' ? (isEn ? 'Building...' : '생성 중...') : (isEn ? 'Build Machine Learning Model' : '머신러닝 모델 생성')}
@@ -303,7 +303,7 @@ export default function SyncPanel() {
             </Tooltip>
           </Stack>
 
-          {!authLoading && !isAdmin && (
+          {!authLoading && !isAdmin && !isLocalhost && (
             <Alert severity="warning" sx={{mt: 2}}>
               {email ? (isEn ? `${email} does not have AI model build permission.` : `${email} 계정은 AI 모델 제작 권한이 없습니다.`) : (isEn ? 'Sign in with an admin account to use AI model build.' : '관리자 계정으로 로그인해야 동기화를 사용할 수 있습니다.')}
             </Alert>
