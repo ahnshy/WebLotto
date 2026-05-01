@@ -15,7 +15,7 @@ import {
   serializeRandomForestModel,
 } from '@/lib/lottoRandomForest';
 
-const uploadDir = path.join(process.cwd(), 'Upload');
+const modelDir = path.join(process.cwd(), 'public', 'ai-models');
 
 function lstmFileName(latestRound: number) {
   return `1_${latestRound}_LSTM.model`;
@@ -25,23 +25,23 @@ function randomForestFileName(latestRound: number) {
   return `1_${latestRound}_RandomForest.model`;
 }
 
-async function ensureUploadDir() {
-  await mkdir(uploadDir, { recursive: true });
+async function ensureModelDir() {
+  await mkdir(modelDir, { recursive: true });
 }
 
 async function cleanupOldModels(pattern: RegExp, keepFileName: string) {
-  const files = await readdir(uploadDir).catch(() => []);
+  const files = await readdir(modelDir).catch(() => []);
   await Promise.all(
     files
       .filter((file) => pattern.test(file) && file !== keepFileName)
-      .map((file) => rm(path.join(uploadDir, file), { force: true }))
+      .map((file) => rm(path.join(modelDir, file), { force: true }))
   );
 }
 
 export async function saveLstmModelToDisk(prepared: PreparedLstmModel) {
-  await ensureUploadDir();
+  await ensureModelDir();
   const fileName = lstmFileName(prepared.latestRound);
-  const filePath = path.join(uploadDir, fileName);
+  const filePath = path.join(modelDir, fileName);
   const serialized = await serializeLstmModel(prepared);
   await writeFile(filePath, JSON.stringify(serialized), 'utf8');
   await cleanupOldModels(/_LSTM\.model$/, fileName);
@@ -49,8 +49,8 @@ export async function saveLstmModelToDisk(prepared: PreparedLstmModel) {
 }
 
 export async function loadLstmModelFromDisk(latestRound: number): Promise<PreparedLstmModel | null> {
-  await ensureUploadDir();
-  const filePath = path.join(uploadDir, lstmFileName(latestRound));
+  await ensureModelDir();
+  const filePath = path.join(modelDir, lstmFileName(latestRound));
   try {
     const raw = await readFile(filePath, 'utf8');
     const serialized = JSON.parse(raw) as SerializedLstmModel;
@@ -61,9 +61,9 @@ export async function loadLstmModelFromDisk(latestRound: number): Promise<Prepar
 }
 
 export async function saveRandomForestModelToDisk(prepared: PreparedRandomForestModel) {
-  await ensureUploadDir();
+  await ensureModelDir();
   const fileName = randomForestFileName(prepared.latestRound);
-  const filePath = path.join(uploadDir, fileName);
+  const filePath = path.join(modelDir, fileName);
   const serialized = serializeRandomForestModel(prepared);
   await writeFile(filePath, JSON.stringify(serialized), 'utf8');
   await cleanupOldModels(/_RandomForest\.model$/, fileName);
@@ -71,8 +71,8 @@ export async function saveRandomForestModelToDisk(prepared: PreparedRandomForest
 }
 
 export async function loadRandomForestModelFromDisk(latestRound: number): Promise<PreparedRandomForestModel | null> {
-  await ensureUploadDir();
-  const filePath = path.join(uploadDir, randomForestFileName(latestRound));
+  await ensureModelDir();
+  const filePath = path.join(modelDir, randomForestFileName(latestRound));
   try {
     const raw = await readFile(filePath, 'utf8');
     const serialized = JSON.parse(raw) as SerializedRandomForestModel;
