@@ -18,8 +18,7 @@ import {
   saveLstmModelToDisk,
   saveRandomForestModelToDisk,
 } from '@/lib/lottoAiPersistence';
-
-const db = process.env.SUPABASE_SERVICE_ROLE ? supabaseAdmin : supabase;
+import { stringifyError } from '@/lib/admin';
 
 type ModelState<T> = {
   prepared: T | null;
@@ -52,12 +51,18 @@ function isOwnerColumnError(error: unknown) {
 }
 
 function getErrorText(error: unknown) {
-  if (typeof error === 'string') return error;
-  if (error && typeof error === 'object') {
-    const candidate = error as { message?: string; details?: string; hint?: string; code?: string };
-    return [candidate.code, candidate.message, candidate.details, candidate.hint].filter(Boolean).join(' ');
-  }
-  return String(error ?? '');
+  return stringifyError(error);
+}
+
+function shouldFallbackToAnon(error: unknown) {
+  const message = getErrorText(error).toLowerCase();
+  return (
+    message.includes('invalid api key') ||
+    message.includes('jwt') ||
+    message.includes('auth') ||
+    message.includes('unauthorized') ||
+    message.includes('forbidden')
+  );
 }
 
 function getCache(): LottoAiCache {
@@ -70,15 +75,37 @@ function getCache(): LottoAiCache {
   return globalThis.__lottoAiCache__;
 }
 
-export async function fetchLatestRound(): Promise<number> {
-  const { data, error } = await db
-    .from('kr_lotto_results')
-    .select('round')
-    .order('round', { ascending: false })
-    .limit(1)
-    .single();
+async function runWithDbFallback<T>(
+  executor: (client: typeof supabase) => PromiseLike<{ data: T | null; error: unknown }>
+): Promise<T> {
+  const primaryClient = process.env.SUPABASE_SERVICE_ROLE ? supabaseAdmin : supabase;
+  const primary = await executor(primaryClient);
 
-  if (error) throw error;
+  if (!primary.error && primary.data != null) {
+    return primary.data;
+  }
+
+  if (process.env.SUPABASE_SERVICE_ROLE && shouldFallbackToAnon(primary.error)) {
+    const fallback = await executor(supabase);
+    if (!fallback.error && fallback.data != null) {
+      return fallback.data;
+    }
+    throw fallback.error;
+  }
+
+  throw primary.error;
+}
+
+export async function fetchLatestRound(): Promise<number> {
+  const data = await runWithDbFallback<{ round: number }>((client) =>
+    client
+      .from('kr_lotto_results')
+      .select('round')
+      .order('round', { ascending: false })
+      .limit(1)
+      .single()
+  );
+
   return Number(data.round);
 }
 
@@ -88,14 +115,14 @@ export async function fetchLottoHistoryAll(): Promise<LottoRow[]> {
 
   for (let from = 0; ; from += pageSize) {
     const to = from + pageSize - 1;
-    const { data, error } = await db
-      .from('kr_lotto_results')
-      .select('*')
-      .order('round', { ascending: false })
-      .range(from, to);
+    const batch = await runWithDbFallback<LottoRow[]>((client) =>
+      client
+        .from('kr_lotto_results')
+        .select('*')
+        .order('round', { ascending: false })
+        .range(from, to)
+    );
 
-    if (error) throw error;
-    const batch = (data ?? []) as LottoRow[];
     rows.push(...batch);
     if (batch.length < pageSize) break;
   }
@@ -110,45 +137,56 @@ export async function saveDraw(
   owner?: { id?: string | null; email?: string | null }
 ): Promise<DrawRow> {
   const ownerPayload = owner?.id ? { owner_id: owner.id, owner_email: owner.email ?? null } : {};
+  const clients = process.env.SUPABASE_SERVICE_ROLE ? [supabaseAdmin, supabase] : [supabase];
 
-  const primary = await db
-    .from('draws')
-    .insert({ numbers, extraction_method: extractionMethod, extraction_tags: extractionTags, ...ownerPayload })
-    .select()
-    .single();
+  for (const client of clients) {
+    const primary = await client
+      .from('draws')
+      .insert({ numbers, extraction_method: extractionMethod, extraction_tags: extractionTags, ...ownerPayload })
+      .select()
+      .single();
 
-  if (!primary.error) return primary.data as DrawRow;
+    if (!primary.error) return primary.data as DrawRow;
 
-  if (!(isExtractionMethodColumnError(primary.error) || isExtractionTagsColumnError(primary.error) || isOwnerColumnError(primary.error))) {
-    throw primary.error;
+    if (!(isExtractionMethodColumnError(primary.error) || isExtractionTagsColumnError(primary.error) || isOwnerColumnError(primary.error) || shouldFallbackToAnon(primary.error))) {
+      throw primary.error;
+    }
+
+    const methodOnly = await client
+      .from('draws')
+      .insert({ numbers, extraction_method: extractionMethod, ...ownerPayload })
+      .select()
+      .single();
+
+    if (!methodOnly.error) return methodOnly.data as DrawRow;
+    if (!(isExtractionMethodColumnError(methodOnly.error) || isOwnerColumnError(methodOnly.error) || shouldFallbackToAnon(methodOnly.error))) {
+      throw methodOnly.error;
+    }
+
+    const fallback = await client
+      .from('draws')
+      .insert({ numbers, ...ownerPayload })
+      .select()
+      .single();
+
+    if (!fallback.error) return fallback.data as DrawRow;
+    if (!isOwnerColumnError(fallback.error) && !shouldFallbackToAnon(fallback.error)) {
+      throw fallback.error;
+    }
+
+    const legacy = await client
+      .from('draws')
+      .insert({ numbers })
+      .select()
+      .single();
+
+    if (!legacy.error) return legacy.data as DrawRow;
+    if (!shouldFallbackToAnon(legacy.error)) {
+      throw legacy.error;
+    }
   }
 
-  const methodOnly = await db
-    .from('draws')
-    .insert({ numbers, extraction_method: extractionMethod, ...ownerPayload })
-    .select()
-    .single();
-
-  if (!methodOnly.error) return methodOnly.data as DrawRow;
-  if (!(isExtractionMethodColumnError(methodOnly.error) || isOwnerColumnError(methodOnly.error))) throw methodOnly.error;
-
-  const fallback = await db
-    .from('draws')
-    .insert({ numbers, ...ownerPayload })
-    .select()
-    .single();
-
-  if (!fallback.error) return fallback.data as DrawRow;
-  if (!isOwnerColumnError(fallback.error)) throw fallback.error;
-
-  const legacy = await db
-    .from('draws')
-    .insert({ numbers })
-    .select()
-    .single();
-
-  if (legacy.error) throw legacy.error;
-  return legacy.data as DrawRow;
+  throw new Error('draws 저장에 실패했습니다.');
 }
 
 export async function ensurePreparedLstmModel(force = false) {
@@ -238,7 +276,7 @@ export async function warmLstmModel(force = false) {
   if (!force && state.trainingPromise) return;
 
   void ensurePreparedLstmModel(force).catch((error) => {
-    console.error('Failed to warm LSTM model:', error);
+    console.error('Failed to warm LSTM model:', stringifyError(error));
   });
 }
 
@@ -251,7 +289,7 @@ export async function warmRandomForestModel(force = false) {
   if (!force && state.trainingPromise) return;
 
   void ensurePreparedRandomForestModel(force).catch((error) => {
-    console.error('Failed to warm Random Forest model:', error);
+    console.error('Failed to warm Random Forest model:', stringifyError(error));
   });
 }
 
@@ -283,4 +321,24 @@ export async function generateLstmPrediction() {
 export async function generateRandomForestPrediction() {
   const prepared = await ensurePreparedRandomForestModel();
   return predictWithPreparedRandomForest(prepared);
+}
+
+export async function buildLstmModelArtifact(force = true) {
+  const prepared = await ensurePreparedLstmModel(force);
+  const filePath = await saveLstmModelToDisk(prepared);
+  return {
+    filePath,
+    latestRound: prepared.latestRound,
+    trainedAt: prepared.trainedAt,
+  };
+}
+
+export async function buildRandomForestModelArtifact(force = true) {
+  const prepared = await ensurePreparedRandomForestModel(force);
+  const filePath = await saveRandomForestModelToDisk(prepared);
+  return {
+    filePath,
+    latestRound: prepared.latestRound,
+    trainedAt: prepared.trainedAt,
+  };
 }
