@@ -15,7 +15,10 @@ import {
   serializeRandomForestModel,
 } from '@/lib/lottoRandomForest';
 
-const modelDir = path.join(process.cwd(), 'public', 'ai-models');
+const bundledModelDir = path.join(process.cwd(), 'public', 'ai-models');
+const runtimeModelDir = process.env.VERCEL
+  ? path.join('/tmp', 'ai-models')
+  : bundledModelDir;
 
 function lstmFileName(latestRound: number) {
   return `1_${latestRound}_LSTM.model`;
@@ -23,6 +26,12 @@ function lstmFileName(latestRound: number) {
 
 function randomForestFileName(latestRound: number) {
   return `1_${latestRound}_RandomForest.model`;
+}
+
+function candidateReadDirs() {
+  return runtimeModelDir === bundledModelDir
+    ? [bundledModelDir]
+    : [runtimeModelDir, bundledModelDir];
 }
 
 async function fileExists(filePath: string) {
@@ -34,23 +43,34 @@ async function fileExists(filePath: string) {
   }
 }
 
-async function ensureModelDir() {
-  await mkdir(modelDir, { recursive: true });
+async function ensureRuntimeModelDir() {
+  await mkdir(runtimeModelDir, { recursive: true });
 }
 
 async function cleanupOldModels(pattern: RegExp, keepFileName: string) {
-  const files = await readdir(modelDir).catch(() => []);
+  const files = await readdir(runtimeModelDir).catch(() => []);
   await Promise.all(
     files
       .filter((file) => pattern.test(file) && file !== keepFileName)
-      .map((file) => rm(path.join(modelDir, file), { force: true }))
+      .map((file) => rm(path.join(runtimeModelDir, file), { force: true }))
   );
 }
 
+async function findExistingModelPath(fileName: string) {
+  for (const dir of candidateReadDirs()) {
+    const filePath = path.join(dir, fileName);
+    if (await fileExists(filePath)) {
+      return filePath;
+    }
+  }
+
+  return null;
+}
+
 export async function saveLstmModelToDisk(prepared: PreparedLstmModel) {
-  await ensureModelDir();
+  await ensureRuntimeModelDir();
   const fileName = lstmFileName(prepared.latestRound);
-  const filePath = path.join(modelDir, fileName);
+  const filePath = path.join(runtimeModelDir, fileName);
   const serialized = await serializeLstmModel(prepared);
   await writeFile(filePath, JSON.stringify(serialized), 'utf8');
   await cleanupOldModels(/_LSTM\.model$/, fileName);
@@ -58,8 +78,9 @@ export async function saveLstmModelToDisk(prepared: PreparedLstmModel) {
 }
 
 export async function loadLstmModelFromDisk(latestRound: number): Promise<PreparedLstmModel | null> {
-  await ensureModelDir();
-  const filePath = path.join(modelDir, lstmFileName(latestRound));
+  const filePath = await findExistingModelPath(lstmFileName(latestRound));
+  if (!filePath) return null;
+
   try {
     const raw = await readFile(filePath, 'utf8');
     const serialized = JSON.parse(raw) as SerializedLstmModel;
@@ -70,15 +91,13 @@ export async function loadLstmModelFromDisk(latestRound: number): Promise<Prepar
 }
 
 export async function getExistingLstmModelPath(latestRound: number): Promise<string | null> {
-  await ensureModelDir();
-  const filePath = path.join(modelDir, lstmFileName(latestRound));
-  return (await fileExists(filePath)) ? filePath : null;
+  return findExistingModelPath(lstmFileName(latestRound));
 }
 
 export async function saveRandomForestModelToDisk(prepared: PreparedRandomForestModel) {
-  await ensureModelDir();
+  await ensureRuntimeModelDir();
   const fileName = randomForestFileName(prepared.latestRound);
-  const filePath = path.join(modelDir, fileName);
+  const filePath = path.join(runtimeModelDir, fileName);
   const serialized = serializeRandomForestModel(prepared);
   await writeFile(filePath, JSON.stringify(serialized), 'utf8');
   await cleanupOldModels(/_RandomForest\.model$/, fileName);
@@ -86,8 +105,9 @@ export async function saveRandomForestModelToDisk(prepared: PreparedRandomForest
 }
 
 export async function loadRandomForestModelFromDisk(latestRound: number): Promise<PreparedRandomForestModel | null> {
-  await ensureModelDir();
-  const filePath = path.join(modelDir, randomForestFileName(latestRound));
+  const filePath = await findExistingModelPath(randomForestFileName(latestRound));
+  if (!filePath) return null;
+
   try {
     const raw = await readFile(filePath, 'utf8');
     const serialized = JSON.parse(raw) as SerializedRandomForestModel;
@@ -98,7 +118,5 @@ export async function loadRandomForestModelFromDisk(latestRound: number): Promis
 }
 
 export async function getExistingRandomForestModelPath(latestRound: number): Promise<string | null> {
-  await ensureModelDir();
-  const filePath = path.join(modelDir, randomForestFileName(latestRound));
-  return (await fileExists(filePath)) ? filePath : null;
+  return findExistingModelPath(randomForestFileName(latestRound));
 }
