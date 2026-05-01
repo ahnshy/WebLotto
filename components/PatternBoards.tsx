@@ -1,15 +1,16 @@
 'use client';
+
 import * as React from 'react';
-import { Card, CardContent, Grid, Typography, Box, Button, Stack } from '@mui/material';
+import { Box, Button, Card, CardContent, Grid, Stack, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useLocale } from 'next-intl';
 import type { LottoRow } from '@/app/actions';
 
-// 1~45를 7열 기준 로또 용지형으로 배치
 function posOf(n: number) {
   return { col: (n - 1) % 7, row: Math.floor((n - 1) / 7) };
 }
 
-function Board({ row }: { row: LottoRow }) {
+function Board({ row, isEn }: { row: LottoRow; isEn: boolean }) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const gridStroke = isDark ? 'rgba(255,255,255,.18)' : 'rgba(0,0,0,.15)';
@@ -41,7 +42,7 @@ function Board({ row }: { row: LottoRow }) {
       }}
     >
       <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>
-        {row.round}회차{' '}
+        {isEn ? `Round ${row.round}` : `${row.round}회차`}{' '}
         <Typography component="span" variant="caption" sx={{ opacity: 0.55, fontWeight: 400 }}>
           {row.draw_date}
         </Typography>
@@ -50,7 +51,7 @@ function Board({ row }: { row: LottoRow }) {
       <svg
         viewBox={`0 0 ${VW} ${VH}`}
         style={{ display: 'block', width: '100%', height: 'auto' }}
-        aria-label={`${row.round}회차 패턴`}
+        aria-label={isEn ? `Round ${row.round} pattern` : `${row.round}회차 패턴`}
       >
         {Array.from({ length: 45 }, (_, i) => {
           const n = i + 1;
@@ -92,13 +93,11 @@ function Board({ row }: { row: LottoRow }) {
 const PAGE_STEP = 12;
 
 export default function PatternBoards({ rows }: { rows: LottoRow[] }) {
+  const locale = useLocale();
+  const isEn = locale === 'en';
   const [count, setCount] = React.useState(PAGE_STEP);
 
-  const sorted = React.useMemo(
-    () => [...rows].sort((a, b) => b.round - a.round),
-    [rows]
-  );
-
+  const sorted = React.useMemo(() => [...rows].sort((a, b) => b.round - a.round), [rows]);
   const view = sorted.slice(0, count);
   const hasMore = count < sorted.length;
 
@@ -107,17 +106,17 @@ export default function PatternBoards({ rows }: { rows: LottoRow[] }) {
       <CardContent>
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
           <Typography variant="subtitle2">
-            당첨 패턴 (최신순)
+            {isEn ? 'Winning Patterns (Newest First)' : '당첨 패턴 (최신순)'}
           </Typography>
           <Typography variant="caption" sx={{ opacity: 0.55 }}>
-            {view.length} / {sorted.length}회차
+            {isEn ? `${view.length} / ${sorted.length} rounds` : `${view.length} / ${sorted.length}회차`}
           </Typography>
         </Stack>
 
         <Grid container spacing={2}>
           {view.map((r) => (
             <Grid item xs={12} sm={6} md={4} key={r.round}>
-              <Board row={r} />
+              <Board row={r} isEn={isEn} />
             </Grid>
           ))}
         </Grid>
@@ -129,7 +128,9 @@ export default function PatternBoards({ rows }: { rows: LottoRow[] }) {
               size="small"
               onClick={() => setCount((c) => Math.min(sorted.length, c + PAGE_STEP))}
             >
-              더 보기 ({Math.min(PAGE_STEP, sorted.length - count)}개)
+              {isEn
+                ? `Load More (${Math.min(PAGE_STEP, sorted.length - count)})`
+                : `더보기 (${Math.min(PAGE_STEP, sorted.length - count)}개)`}
             </Button>
           </Box>
         )}
