@@ -19,14 +19,14 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import LocalMallOutlinedIcon from '@mui/icons-material/LocalMallOutlined';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import dynamic from 'next/dynamic';
-import {useTranslations} from 'next-intl';
+import {useLocale, useTranslations} from 'next-intl';
 import {deleteDraws, DrawRow, fetchDraws, fetchLottoHistoryAll, LottoRow, saveDraw} from '@/app/actions';
 import {useAuth} from '@/components/AuthContext';
 import DrawHistoryActions from '@/components/DrawHistoryActions';
 import MockDrawPanel from '@/components/MockDrawPanel';
 import NumberBall from '@/components/NumberBall';
 import PatternBasedPanel from '@/components/PatternBasedPanel';
-import StatBasedPanel, {STAT_OPTION_LABELS, StatOption} from '@/components/StatBasedPanel';
+import StatBasedPanel, {STAT_OPTION_LABELS, STAT_OPTION_LABELS_EN, StatOption} from '@/components/StatBasedPanel';
 import SyncPanel from '@/components/SyncPanel';
 import {printLottoSlip} from '@/components/lottoPrint';
 import {SECTION_IDS, useNav} from './NavContext';
@@ -53,6 +53,8 @@ const WinningsTable = dynamic(() => import('@/components/WinningsTable'), {
 });
 
 export default function HomePage() {
+  const locale = useLocale();
+  const isEn = locale === 'en';
   const t = useTranslations('HomePage');
   const {user, email, loading: authLoading} = useAuth();
   const {section} = useNav();
@@ -288,7 +290,8 @@ export default function HomePage() {
                 history={history}
                 ballSize={ballSize}
                 onGenerated={async (numbers, options) => {
-                  const row = await saveDraw(numbers, 'stat', options.map((option: StatOption) => STAT_OPTION_LABELS[option].title), {id: user?.id ?? null, email});
+                  const labels = isEn ? STAT_OPTION_LABELS_EN : STAT_OPTION_LABELS;
+                  const row = await saveDraw(numbers, 'stat', options.map((option: StatOption) => labels[option].title), {id: user?.id ?? null, email});
                   setDraws((prev) => [row, ...prev]);
                   setSelected(row);
                 }}
