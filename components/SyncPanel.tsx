@@ -21,6 +21,16 @@ import {useAuth} from './AuthContext';
 
 const SYNC_BATCH_SIZE = 100;
 
+function parseJsonText(text: string) {
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {error: text};
+  }
+}
+
 async function getLatest(): Promise<number> {
   const response = await fetch('/api/dhlotto/latest', {cache: 'no-store'});
   if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -174,7 +184,7 @@ export default function SyncPanel() {
         body: JSON.stringify({email}),
       });
       const text = await response.text();
-      const json = text ? JSON.parse(text) : null;
+      const json = parseJsonText(text);
 
       if (!response.ok || !json?.success) throw new Error(json?.error || `HTTP ${response.status}`);
 
