@@ -3,6 +3,7 @@
 import * as React from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
+import { isAdminEmail } from '@/lib/admin';
 
 type AuthContextValue = {
   user: User | null;
@@ -15,13 +16,6 @@ type AuthContextValue = {
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 };
-
-const ADMIN_EMAILS = new Set([
-  'ahnshy@gamil.com',
-  'ahnshy6@gamil.com',
-  'ahnshy@gmail.com',
-  'ahnshy6@gmail.com',
-]);
 
 const AuthContext = React.createContext<AuthContextValue | null>(null);
 
@@ -124,7 +118,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     (user?.user_metadata?.avatar_url as string | undefined)
     ?? (user?.user_metadata?.picture as string | undefined)
     ?? null;
-  const isAdmin = email ? ADMIN_EMAILS.has(email) : false;
+  const isAdmin = isAdminEmail(email);
 
   const value = React.useMemo<AuthContextValue>(() => ({
     user,
