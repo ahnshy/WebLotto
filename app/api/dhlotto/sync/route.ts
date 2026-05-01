@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabaseClient';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { stringifyError } from '@/lib/admin';
 
 export const revalidate = 0;
 
-// 범위로 여러 회차 한번에 가져오기
 async function getRoundRange(start: number, end: number): Promise<any[]> {
   try {
     const url = `https://www.dhlottery.co.kr/lt645/selectPstLt645Info.do?srchStrLtEpsd=${start}&srchEndLtEpsd=${end}`;
@@ -39,53 +40,38 @@ async function getRoundRange(start: number, end: number): Promise<any[]> {
     let data: any;
     try {
       data = JSON.parse(text);
-    } catch (e) {
-      console.log(`[getRoundRange ${start}-${end}] JSON parse error: ${String(e)}`);
+    } catch (error) {
+      console.log(`[getRoundRange ${start}-${end}] JSON parse error: ${stringifyError(error)}`);
       console.log(`[getRoundRange ${start}-${end}] First 300 chars: ${text.substring(0, 300)}`);
       return [];
     }
 
     let items: any[] = [];
-    // 구조 1: { data: { list: [...] } }
     if (data?.data?.list && Array.isArray(data.data.list)) {
       items = data.data.list;
-    }
-    // 구조 2: { list: [...] }
-    else if (data?.list && Array.isArray(data.list)) {
+    } else if (data?.list && Array.isArray(data.list)) {
       items = data.list;
-    }
-    // 구조 3: 배열 직접
-    else if (Array.isArray(data)) {
+    } else if (Array.isArray(data)) {
       items = data;
-    }
-    // 구조 4: 단일 객체
-    else if (data && typeof data === 'object') {
-      // 단일 회차인 경우 배열로 래핑
+    } else if (data && typeof data === 'object') {
       const keys = Object.keys(data);
       if (keys.includes('ltEpsd') || keys.includes('drwNo') || keys.includes('tm1WnNo') || keys.includes('drwtNo1')) {
         items = [data];
       } else {
         console.log(`[getRoundRange ${start}-${end}] Unknown structure, keys: ${keys.slice(0, 10).join(', ')}`);
-        // 응답 전체 로깅 (처음 500자)
         console.log(`[getRoundRange ${start}-${end}] Full response: ${text.substring(0, 500)}`);
       }
     }
 
     console.log(`[getRoundRange ${start}-${end}] Got ${items.length} items`);
     return items;
-  } catch (e) {
-    console.error(`[getRoundRange ${start}-${end}] Error:`, String(e));
+  } catch (error) {
+    console.error(`[getRoundRange ${start}-${end}] Error:`, stringifyError(error));
     return [];
   }
 }
 
-function parseItem(item: any, fallbackRound: number): {
-  round: number; draw_date: string;
-  n1: number; n2: number; n3: number; n4: number; n5: number; n6: number;
-  bonus: number;
-  first_prize_winners: number | null;
-  first_prize_amount: number | null;
-} | null {
+function parseItem(item: any, fallbackRound: number) {
   if (!item || typeof item !== 'object') return null;
 
   const roundNum = Number(item.ltEpsd || item.drwNo || fallbackRound);
@@ -97,26 +83,20 @@ function parseItem(item: any, fallbackRound: number): {
   }
   if (!drawDate) return null;
 
-  const getNum = (newF: string, oldF: string): number => {
-    const val = item[newF] !== undefined ? item[newF] : item[oldF];
-    if (val === undefined || val === null || val === '') return 0;
-    const n = parseInt(String(val), 10);
-    return isNaN(n) ? 0 : Math.max(0, n);
+  const getNum = (newField: string, oldField: string): number => {
+    const value = item[newField] !== undefined ? item[newField] : item[oldField];
+    if (value === undefined || value === null || value === '') return 0;
+    const parsed = parseInt(String(value), 10);
+    return Number.isNaN(parsed) ? 0 : Math.max(0, parsed);
   };
 
   const getOptionalNum = (...fields: string[]): number | null => {
     for (const field of fields) {
-      const val = item[field];
-      if (val === undefined || val === null || val === '') {
-        continue;
-      }
-
-      const n = parseInt(String(val), 10);
-      if (!isNaN(n)) {
-        return Math.max(0, n);
-      }
+      const value = item[field];
+      if (value === undefined || value === null || value === '') continue;
+      const parsed = parseInt(String(value), 10);
+      if (!Number.isNaN(parsed)) return Math.max(0, parsed);
     }
-
     return null;
   };
 
@@ -139,23 +119,7 @@ export async function GET(req: NextRequest) {
   console.log('[Sync API] ===== Request started =====');
 
   try {
-    let supabaseClient: any;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE;
-
-    if (serviceKey) {
-      supabaseClient = supabaseAdmin;
-      console.log('[Sync API] Using service role');
-    } else {
-      const { createClient } = require('@supabase/supabase-js');
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-      if (!url || !anonKey) {
-        return NextResponse.json({ success: false, error: 'Missing Supabase configuration' }, { status: 500 });
-      }
-      supabaseClient = createClient(url, anonKey);
-      console.log('[Sync API] Using anon key');
-    }
-
+    const supabaseClients = process.env.SUPABASE_SERVICE_ROLE ? [supabaseAdmin, supabase] : [supabase];
     const { searchParams } = new URL(req.url);
     const start = parseInt(searchParams.get('start') || '1', 10);
     const end = parseInt(searchParams.get('end') || String(start), 10);
@@ -169,7 +133,7 @@ export async function GET(req: NextRequest) {
     let syncedCount = 0;
     let failedCount = 0;
     const errors: string[] = [];
-    const rangeSize = 100; // 한 번에 100회차씩 범위 요청
+    const rangeSize = 100;
 
     for (let batchStart = start; batchStart <= end; batchStart += rangeSize) {
       const batchEnd = Math.min(batchStart + rangeSize - 1, end);
@@ -181,50 +145,58 @@ export async function GET(req: NextRequest) {
         const missed = batchEnd - batchStart + 1;
         failedCount += missed;
         errors.push(`Range ${batchStart}-${batchEnd}: no items returned`);
-        console.log(`[Sync API] Range ${batchStart}-${batchEnd}: 0 items → ${missed} failed`);
+        console.log(`[Sync API] Range ${batchStart}-${batchEnd}: 0 items -> ${missed} failed`);
         continue;
       }
 
       const dataToInsert = rawItems
-        .map((item, i) => parseItem(item, batchStart + i))
-        .filter((d): d is NonNullable<typeof d> => d !== null);
+        .map((item, index) => parseItem(item, batchStart + index))
+        .filter((item): item is NonNullable<typeof item> => item !== null);
 
       const parseFailed = rawItems.length - dataToInsert.length;
       if (parseFailed > 0) {
         failedCount += parseFailed;
-        console.log(`[Sync API] Parse failed: ${parseFailed} items`);
       }
 
-      // 범위에서 누락된 회차 계산
-      const fetchedRounds = new Set(dataToInsert.map(d => d.round));
-      for (let r = batchStart; r <= batchEnd; r++) {
-        if (!fetchedRounds.has(r)) failedCount++;
+      const fetchedRounds = new Set(dataToInsert.map((item) => item.round));
+      for (let round = batchStart; round <= batchEnd; round += 1) {
+        if (!fetchedRounds.has(round)) failedCount += 1;
       }
 
       if (dataToInsert.length > 0) {
         try {
-          console.log(`[Sync API] Inserting ${dataToInsert.length} records...`);
-          const { error } = await supabaseClient
-            .from('kr_lotto_results')
-            .upsert(dataToInsert, { onConflict: 'round' });
+          let upserted = false;
+          let lastError: unknown = null;
 
-          if (error) {
-            console.error(`[Sync API] Supabase error:`, error);
-            failedCount += dataToInsert.length;
-            errors.push(`Upsert ${batchStart}-${batchEnd}: ${error.message}`);
-          } else {
-            syncedCount += dataToInsert.length;
-            console.log(`[Sync API] ✓ Inserted ${dataToInsert.length} records`);
+          for (const client of supabaseClients) {
+            const { error } = await client
+              .from('kr_lotto_results')
+              .upsert(dataToInsert, { onConflict: 'round' });
+
+            if (!error) {
+              syncedCount += dataToInsert.length;
+              upserted = true;
+              console.log(`[Sync API] ✓ Inserted ${dataToInsert.length} records`);
+              break;
+            }
+
+            lastError = error;
+            console.error('[Sync API] Supabase error:', stringifyError(error));
           }
-        } catch (e) {
-          console.error(`[Sync API] Exception:`, String(e));
+
+          if (!upserted) {
+            failedCount += dataToInsert.length;
+            errors.push(`Upsert ${batchStart}-${batchEnd}: ${stringifyError(lastError)}`);
+          }
+        } catch (error) {
+          console.error('[Sync API] Exception:', stringifyError(error));
           failedCount += dataToInsert.length;
-          errors.push(`Exception ${batchStart}-${batchEnd}: ${String(e)}`);
+          errors.push(`Exception ${batchStart}-${batchEnd}: ${stringifyError(error)}`);
         }
       }
 
       if (batchEnd < end) {
-        await new Promise(res => setTimeout(res, 200));
+        await new Promise((resolve) => setTimeout(resolve, 200));
       }
     }
 
@@ -237,8 +209,8 @@ export async function GET(req: NextRequest) {
       range: { start, end },
       errors: errors.length > 0 ? errors.slice(0, 10) : undefined,
     });
-  } catch (e) {
-    const errMsg = String(e);
+  } catch (error) {
+    const errMsg = stringifyError(error);
     console.error('[Sync API] Fatal error:', errMsg);
     return NextResponse.json({ success: false, error: `Server error: ${errMsg}` }, { status: 500 });
   }
