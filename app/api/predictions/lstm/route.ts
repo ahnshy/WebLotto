@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         success: true,
-        artifact: await buildLstmModelArtifact(true),
+        artifact: await buildLstmModelArtifact(false),
         status: await getLstmStatus(),
       });
     }
