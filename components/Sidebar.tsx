@@ -46,7 +46,7 @@ export default function Sidebar({
   const [openExtract, setOpenExtract] = React.useState(true);
   const [openSimulation, setOpenSimulation] = React.useState(true);
 
-  const width = collapsed ? SIDEBAR_MINI : SIDEBAR_FULL;
+  const width = isMdUp ? (collapsed ? SIDEBAR_MINI : SIDEBAR_FULL) : SIDEBAR_FULL;
   const isDark = theme.palette.mode === 'dark';
   const isNight = theme.palette.background.paper === '#151b2f';
   const menuItemHoverBg = isNight ? alpha('#4f46e5', 0.15) : isDark ? alpha('#90caf9', 0.12) : alpha('#3b82f6', 0.08);
