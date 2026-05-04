@@ -22,6 +22,7 @@ import {SECTION_IDS, Section, useNav} from './NavContext';
 
 export const SIDEBAR_FULL = 280;
 export const SIDEBAR_MINI = 80;
+const MOBILE_DRAWER_WIDTH = 'min(88vw, 320px)';
 
 function ItemText({primary, collapsed}: {primary: string; collapsed: boolean}) {
   return collapsed ? null : <ListItemText primary={primary} />;
@@ -46,7 +47,7 @@ export default function Sidebar({
   const [openExtract, setOpenExtract] = React.useState(true);
   const [openSimulation, setOpenSimulation] = React.useState(true);
 
-  const width = isMdUp ? (collapsed ? SIDEBAR_MINI : SIDEBAR_FULL) : SIDEBAR_FULL;
+  const width = isMdUp ? (collapsed ? SIDEBAR_MINI : SIDEBAR_FULL) : MOBILE_DRAWER_WIDTH;
   const isDark = theme.palette.mode === 'dark';
   const isNight = theme.palette.background.paper === '#151b2f';
   const menuItemHoverBg = isNight ? alpha('#4f46e5', 0.15) : isDark ? alpha('#90caf9', 0.12) : alpha('#3b82f6', 0.08);
@@ -180,7 +181,20 @@ export default function Sidebar({
       {content}
     </Drawer>
   ) : (
-    <Drawer variant="temporary" open={open} onClose={onClose} ModalProps={{keepMounted: true}} sx={{'& .MuiDrawer-paper': {width, boxSizing: 'border-box'}}}>
+    <Drawer
+      variant="temporary"
+      open={open}
+      onClose={onClose}
+      ModalProps={{keepMounted: true}}
+      sx={{
+        '& .MuiDrawer-paper': {
+          width,
+          maxWidth: '100vw',
+          boxSizing: 'border-box',
+          overflowX: 'hidden'
+        }
+      }}
+    >
       {content}
     </Drawer>
   );
