@@ -1,8 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import {alpha, Box, Button, ListItemText, Menu, MenuItem, Typography} from '@mui/material';
+import {alpha, Button, ListItemText, Menu, MenuItem, Typography} from '@mui/material';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
+import LanguageRoundedIcon from '@mui/icons-material/LanguageRounded';
 import {useLocale, useTranslations} from 'next-intl';
 import type {AppLocale} from '@/i18n';
 import {usePathname, useRouter} from '@/i18n/navigation';
@@ -21,7 +22,7 @@ function setLocaleCache(locale: AppLocale) {
   document.cookie = `${COOKIE_KEY}=${locale}; path=/; max-age=${COOKIE_AGE}; samesite=lax`;
 }
 
-export default function LocaleSwitcher() {
+export default function LocaleSwitcher({compact = false}: {compact?: boolean}) {
   const locale = useLocale() as AppLocale;
   const pathname = usePathname();
   const router = useRouter();
@@ -49,15 +50,15 @@ export default function LocaleSwitcher() {
         onClick={(event) => setAnchorEl(event.currentTarget)}
         sx={{
           minWidth: 0,
-          px: 1.25,
-          py: 0.6,
+          px: compact ? 0.875 : 1.25,
+          py: compact ? 0.5 : 0.6,
           borderRadius: '18px',
           textTransform: 'none',
           border: '2px solid',
           borderColor: '#5ea4ff',
           bgcolor: alpha('#0d1629', 0.9),
           color: '#fff',
-          gap: 0.75,
+          gap: compact ? 0.5 : 0.75,
           fontWeight: 800,
           lineHeight: 1,
           '&:hover': {
@@ -66,13 +67,11 @@ export default function LocaleSwitcher() {
           }
         }}
       >
-        <Typography component="span" sx={{fontSize: '0.78rem', fontWeight: 900, letterSpacing: 0}}>
-          文A
-        </Typography>
-        <Typography component="span" sx={{fontSize: '0.92rem', fontWeight: 800}}>
+        <LanguageRoundedIcon sx={{fontSize: compact ? '0.95rem' : '1rem'}} />
+        <Typography component="span" sx={{fontSize: compact ? '0.82rem' : '0.92rem', fontWeight: 800}}>
           {locale.toUpperCase()}
         </Typography>
-        <KeyboardArrowDownRoundedIcon sx={{fontSize: '1rem'}} />
+        <KeyboardArrowDownRoundedIcon sx={{fontSize: compact ? '0.9rem' : '1rem'}} />
       </Button>
       <Menu
         anchorEl={anchorEl}
