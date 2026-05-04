@@ -72,7 +72,7 @@ export default function Sidebar({
   });
 
   const content = (
-    <Box role="presentation" sx={{width, display: 'flex', flexDirection: 'column', height: '100%', bgcolor: theme.palette.background.paper, borderRight: `1px solid ${alpha(theme.palette.text.primary, 0.08)}`, transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)'}}>
+    <Box role="presentation" sx={{width, display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, bgcolor: theme.palette.background.paper, borderRight: `1px solid ${alpha(theme.palette.text.primary, 0.08)}`, transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)'}}>
       <Box sx={{display: 'flex', alignItems: 'center', gap: collapsed ? 0.5 : 1.5, px: 1.5, py: 1.5, height: 64, borderBottom: `1px solid ${alpha(theme.palette.text.primary, 0.08)}`}}>
         <IconButton
           onClick={() => {
@@ -99,7 +99,7 @@ export default function Sidebar({
         )}
       </Box>
 
-      <List sx={{pt: 1.5, px: 1, flex: 1, overflow: 'auto', '&::-webkit-scrollbar': {width: '6px'}, '&::-webkit-scrollbar-track': {bgcolor: 'transparent'}, '&::-webkit-scrollbar-thumb': {bgcolor: alpha(theme.palette.text.primary, 0.1), borderRadius: '3px', '&:hover': {bgcolor: alpha(theme.palette.text.primary, 0.15)}}}}>
+      <List sx={{pt: 1.5, px: 1, flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', '&::-webkit-scrollbar': {width: '6px'}, '&::-webkit-scrollbar-track': {bgcolor: 'transparent'}, '&::-webkit-scrollbar-thumb': {bgcolor: alpha(theme.palette.text.primary, 0.1), borderRadius: '3px', '&:hover': {bgcolor: alpha(theme.palette.text.primary, 0.15)}}}}>
         <ListItemButton onClick={() => setOpenAnalysis((prev) => !prev)} sx={itemSx(false)}>
           <ListItemIcon sx={{minWidth: 40}}><AnalyticsIcon sx={{fontSize: '1.25rem'}} /></ListItemIcon>
           <ItemText collapsed={collapsed} primary={t('analysis')} />
@@ -177,7 +177,7 @@ export default function Sidebar({
   );
 
   return isMdUp ? (
-    <Drawer variant="permanent" open sx={{height: '100%', '& .MuiDrawer-paper': {position: 'relative', width, height: '100%', transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)', boxSizing: 'border-box', overflow: 'hidden'}}}>
+    <Drawer variant="permanent" open sx={{height: '100dvh', '& .MuiDrawer-paper': {position: 'relative', top: 0, width, height: '100dvh', transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)', boxSizing: 'border-box', overflow: 'hidden'}}}>
       {content}
     </Drawer>
   ) : (

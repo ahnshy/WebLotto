@@ -40,9 +40,9 @@ export default function AppShell({children}: {children: React.ReactNode}) {
 
   return (
     <ErrorBoundary>
-      <Box sx={{width: '100%', minHeight: '100dvh', display: 'flex', flexDirection: 'row', overflow: 'hidden'}}>
+      <Box sx={{width: '100%', height: '100dvh', display: 'flex', flexDirection: 'row', overflow: 'hidden'}}>
         {isMdUp && (
-          <Box sx={{width: sidebarWidth, height: '100%', flexShrink: 0, transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)', overflow: 'hidden'}}>
+          <Box sx={{width: sidebarWidth, height: '100dvh', flexShrink: 0, transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)', overflow: 'hidden'}}>
             <Sidebar open={open} onClose={() => setOpen(false)} collapsed={collapsed} setCollapsed={setCollapsed} />
           </Box>
         )}
