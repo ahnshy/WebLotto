@@ -19,6 +19,11 @@ type AuthContextValue = {
 
 const AuthContext = React.createContext<AuthContextValue | null>(null);
 
+function isAuthCallbackPath() {
+  if (typeof window === 'undefined') return false;
+  return /(^|\/)auth\/callback\/?$/.test(window.location.pathname);
+}
+
 function cleanAuthUrl() {
   if (typeof window === 'undefined') return;
 
@@ -70,7 +75,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   React.useEffect(() => {
     let mounted = true;
 
-    cleanAuthUrl();
+    // Do not remove OAuth callback parameters before /auth/callback has exchanged
+    // the Supabase authorization code for a session. Removing them too early can
+    // make Chrome/Custom Tabs stop at a callback page or leave the app unauthenticated.
+    if (!isAuthCallbackPath()) {
+      cleanAuthUrl();
+    }
 
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
@@ -92,10 +102,30 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const signInWithGoogle = React.useCallback(async () => {
-    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
+    let redirectTo: string | undefined;
+
+    if (typeof window !== 'undefined') {
+      const ua = window.navigator.userAgent || '';
+      const isWebLottoAndroidApp = ua.includes('WebLottoAndroid');
+
+      if (isWebLottoAndroidApp) {
+        // Android 앱 WebView에서 시작한 Google 로그인은 Supabase가 custom scheme으로
+        // 돌려보내야 Chrome 탭에 404로 남지 않고 앱으로 즉시 복귀할 수 있습니다.
+        redirectTo = 'io.github.ahnshy.weblotto://auth-callback';
+      } else {
+        const nextPath = window.location.pathname || '/ko';
+        redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+      }
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo },
+      options: {
+        redirectTo,
+        queryParams: {
+          prompt: 'select_account',
+        },
+      },
     });
     if (error) throw error;
   }, []);
