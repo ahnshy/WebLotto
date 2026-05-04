@@ -29,9 +29,14 @@ export default function AppShell({children}: {children: React.ReactNode}) {
 
   const sidebarWidth = isMdUp ? (collapsed ? SIDEBAR_MINI : SIDEBAR_FULL) : 0;
   const isCompactHeader = !isSmUp;
+  const nextMode = mode === 'light' ? 'dark' : mode === 'dark' ? 'night' : 'light';
   const handleChange = (_: unknown, value: 'light' | 'dark' | 'night' | null) => {
     if (value) setMode(value);
   };
+  const handleCycleMode = () => setMode(nextMode);
+  const modeLabel = mode === 'light' ? t('light') : mode === 'dark' ? t('dark') : t('night');
+  const nextModeLabel = nextMode === 'light' ? t('light') : nextMode === 'dark' ? t('dark') : t('night');
+  const modeIcon = mode === 'light' ? <WbSunnyIcon fontSize="small" /> : mode === 'dark' ? <DarkModeIcon fontSize="small" /> : <NightlightRoundIcon fontSize="small" />;
 
   return (
     <ErrorBoundary>
@@ -50,55 +55,68 @@ export default function AppShell({children}: {children: React.ReactNode}) {
           <AppBar position="relative" sx={{width: '100%', zIndex: theme.zIndex.drawer + 2, flexShrink: 0}}>
             <Toolbar
               sx={{
-                gap: 1,
+                gap: 0.75,
                 px: {xs: 1, sm: 2, md: 3},
                 py: {xs: 0.75, sm: 1},
-                minHeight: {xs: 64, sm: 72},
-                alignItems: {xs: 'flex-start', sm: 'center'},
-                flexWrap: {xs: 'wrap', sm: 'nowrap'}
+                minHeight: {xs: 56, sm: 72},
+                alignItems: 'center',
+                flexWrap: 'nowrap'
               }}
             >
-              <Box sx={{display: 'flex', alignItems: 'center', gap: 1, flex: {xs: '1 1 auto', sm: 1}, minWidth: 0}}>
+              <Box sx={{display: 'flex', alignItems: 'center', gap: 0.75, flex: 1, minWidth: 0}}>
                 {!isMdUp && (
-                  <IconButton color="inherit" onClick={() => setOpen(true)} aria-label={t('openDrawer')} edge="start" sx={{flexShrink: 0}}>
+                  <IconButton color="inherit" onClick={() => setOpen(true)} aria-label={t('openDrawer')} edge="start" sx={{flexShrink: 0, p: 1}}>
                     <MenuIcon />
                   </IconButton>
                 )}
-                <Typography variant={isCompactHeader ? 'subtitle1' : 'h6'} sx={{fontWeight: 700, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
+                <Typography variant={isCompactHeader ? 'subtitle2' : 'h6'} sx={{fontWeight: 700, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
                   WebLotto
                 </Typography>
               </Box>
 
-              <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: {xs: 0.75, sm: 1}, flexWrap: 'wrap', width: {xs: '100%', sm: 'auto'}, ml: {xs: 0, sm: 'auto'}}}>
-                <LocaleSwitcher compact={isCompactHeader} />
-                <ToggleButtonGroup
-                  value={mode}
-                  exclusive
-                  size="small"
-                  onChange={handleChange}
-                  sx={{
-                    bgcolor: 'rgba(255,255,255,0.06)',
-                    borderRadius: 1.5,
-                    '& .MuiToggleButton-root': {
-                      color: 'inherit',
-                      borderColor: 'rgba(255,255,255,0.2)',
-                      px: {xs: 0.7, sm: 1.1},
-                      py: {xs: 0.45, sm: 0.65}
-                    }
-                  }}
-                >
-                  <Tooltip title={t('light')}><ToggleButton value="light" aria-label={t('light')}><WbSunnyIcon fontSize="small" /></ToggleButton></Tooltip>
-                  <Tooltip title={t('dark')}><ToggleButton value="dark" aria-label={t('dark')}><DarkModeIcon fontSize="small" /></ToggleButton></Tooltip>
-                  <Tooltip title={t('night')}><ToggleButton value="night" aria-label={t('night')}><NightlightRoundIcon fontSize="small" /></ToggleButton></Tooltip>
-                </ToggleButtonGroup>
+              <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: {xs: 0.5, sm: 1}, flexShrink: 0, ml: 'auto'}}>
+                <LocaleSwitcher compact={isCompactHeader} iconOnly={isCompactHeader} />
+                {isCompactHeader ? (
+                  <Tooltip title={`${modeLabel} -> ${nextModeLabel}`}>
+                    <IconButton
+                      color="inherit"
+                      onClick={handleCycleMode}
+                      aria-label={nextModeLabel}
+                      sx={{border: '1px solid rgba(255,255,255,0.24)', borderRadius: 1.5, p: 0.8}}
+                    >
+                      {modeIcon}
+                    </IconButton>
+                  </Tooltip>
+                ) : (
+                  <ToggleButtonGroup
+                    value={mode}
+                    exclusive
+                    size="small"
+                    onChange={handleChange}
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.06)',
+                      borderRadius: 1.5,
+                      '& .MuiToggleButton-root': {
+                        color: 'inherit',
+                        borderColor: 'rgba(255,255,255,0.2)',
+                        px: {xs: 0.7, sm: 1.1},
+                        py: {xs: 0.45, sm: 0.65}
+                      }
+                    }}
+                  >
+                    <Tooltip title={t('light')}><ToggleButton value="light" aria-label={t('light')}><WbSunnyIcon fontSize="small" /></ToggleButton></Tooltip>
+                    <Tooltip title={t('dark')}><ToggleButton value="dark" aria-label={t('dark')}><DarkModeIcon fontSize="small" /></ToggleButton></Tooltip>
+                    <Tooltip title={t('night')}><ToggleButton value="night" aria-label={t('night')}><NightlightRoundIcon fontSize="small" /></ToggleButton></Tooltip>
+                  </ToggleButtonGroup>
+                )}
                 {email ? (
                   <Tooltip title={`${displayName ?? email} (${email})`}>
                     {isCompactHeader ? (
                       <IconButton
                         color="inherit"
                         onClick={() => void signOut()}
-                        aria-label={t('googleLogin')}
-                        sx={{border: '1px solid rgba(255,255,255,0.24)', borderRadius: 1.5}}
+                        aria-label="Sign out"
+                        sx={{border: '1px solid rgba(255,255,255,0.24)', borderRadius: 1.5, p: 0.6}}
                       >
                         <Avatar src={avatarUrl ?? undefined} sx={{width: 26, height: 26, fontSize: 12}}>
                           {(displayName ?? email)?.[0]?.toUpperCase()}
@@ -128,7 +146,7 @@ export default function AppShell({children}: {children: React.ReactNode}) {
                           onClick={() => void signInWithGoogle()}
                           disabled={loading}
                           aria-label={t('googleLogin')}
-                          sx={{border: '1px solid rgba(255,255,255,0.24)', borderRadius: 1.5}}
+                          sx={{border: '1px solid rgba(255,255,255,0.24)', borderRadius: 1.5, p: 0.8}}
                         >
                           <GoogleIcon fontSize="small" />
                         </IconButton>
