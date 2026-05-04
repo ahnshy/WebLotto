@@ -22,7 +22,7 @@ function setLocaleCache(locale: AppLocale) {
   document.cookie = `${COOKIE_KEY}=${locale}; path=/; max-age=${COOKIE_AGE}; samesite=lax`;
 }
 
-export default function LocaleSwitcher({compact = false}: {compact?: boolean}) {
+export default function LocaleSwitcher({compact = false, iconOnly = false}: {compact?: boolean; iconOnly?: boolean}) {
   const locale = useLocale() as AppLocale;
   const pathname = usePathname();
   const router = useRouter();
@@ -68,9 +68,11 @@ export default function LocaleSwitcher({compact = false}: {compact?: boolean}) {
         }}
       >
         <LanguageRoundedIcon sx={{fontSize: compact ? '0.95rem' : '1rem'}} />
-        <Typography component="span" sx={{fontSize: compact ? '0.82rem' : '0.92rem', fontWeight: 800}}>
-          {locale.toUpperCase()}
-        </Typography>
+        {!iconOnly && (
+          <Typography component="span" sx={{fontSize: compact ? '0.82rem' : '0.92rem', fontWeight: 800}}>
+            {locale.toUpperCase()}
+          </Typography>
+        )}
         <KeyboardArrowDownRoundedIcon sx={{fontSize: compact ? '0.9rem' : '1rem'}} />
       </Button>
       <Menu
