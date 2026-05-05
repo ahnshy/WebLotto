@@ -12,6 +12,8 @@ type LstmMetadata = {
   epochs: number;
   sampleCount: number;
   trainedRounds: number;
+  lstmUnits: number;
+  denseUnits: number;
   loss: number | null;
   valLoss: number | null;
 };
@@ -49,6 +51,11 @@ export type SerializedLstmModel = {
     weightData: string;
   };
 };
+
+function readPositiveInt(value: string | undefined, fallback: number) {
+  const parsed = Number.parseInt(value ?? '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
 
 function toWeightBuffer(weightData: tf.io.WeightData | null | undefined): Buffer {
   if (!weightData) return Buffer.alloc(0);
@@ -133,10 +140,12 @@ function pickNumbers(probabilities: number[], count: number): number[] {
 export async function trainLstmModel(
   rows: LottoRow[],
   latestRound: number,
-  options?: { windowSize?: number; epochs?: number }
+  options?: { windowSize?: number; epochs?: number; lstmUnits?: number; denseUnits?: number }
 ): Promise<PreparedLstmModel> {
-  const windowSize = options?.windowSize ?? 12;
-  const epochs = options?.epochs ?? 24;
+  const windowSize = options?.windowSize ?? readPositiveInt(process.env.LOTTO_LSTM_WINDOW_SIZE, process.env.VERCEL ? 8 : 12);
+  const epochs = options?.epochs ?? readPositiveInt(process.env.LOTTO_LSTM_EPOCHS, process.env.VERCEL ? 2 : 24);
+  const lstmUnits = options?.lstmUnits ?? readPositiveInt(process.env.LOTTO_LSTM_UNITS, process.env.VERCEL ? 16 : 64);
+  const denseUnits = options?.denseUnits ?? readPositiveInt(process.env.LOTTO_LSTM_DENSE_UNITS, process.env.VERCEL ? 24 : 64);
   const { inputs, targets, latestWindow } = prepareTrainingData(rows, windowSize);
 
   const x = tf.tensor3d(inputs);
@@ -145,13 +154,10 @@ export async function trainLstmModel(
   const model = tf.sequential({
     layers: [
       tf.layers.lstm({
-        units: 64,
+        units: lstmUnits,
         inputShape: [windowSize, 7],
-        returnSequences: true,
       }),
-      tf.layers.dropout({ rate: 0.15 }),
-      tf.layers.lstm({ units: 32 }),
-      tf.layers.dense({ units: 64, activation: 'relu' }),
+      tf.layers.dense({ units: denseUnits, activation: 'relu' }),
       tf.layers.dense({ units: 45, activation: 'sigmoid' }),
     ],
   });
@@ -185,6 +191,8 @@ export async function trainLstmModel(
       epochs,
       sampleCount: inputs.length,
       trainedRounds: rows.length,
+      lstmUnits,
+      denseUnits,
       loss: lossHistory?.length ? lossHistory[lossHistory.length - 1] : null,
       valLoss: valLossHistory?.length ? valLossHistory[valLossHistory.length - 1] : null,
     },

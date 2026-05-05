@@ -8,6 +8,10 @@ import {
 } from '@/lib/lottoAiServer';
 import { isAdminEmail, stringifyError } from '@/lib/admin';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
+
 function isLocalBuildRequest(request: Request) {
   const host = request.headers.get('host') ?? '';
   return host.startsWith('localhost:') || host.startsWith('127.0.0.1:');

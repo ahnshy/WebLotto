@@ -35,6 +35,11 @@ export type SerializedRandomForestModel = {
   trainedAt: number;
 };
 
+function readPositiveInt(value: string | undefined, fallback: number) {
+  const parsed = Number.parseInt(value ?? '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 function getMainNumbers(row: LottoRow): number[] {
   return [row.n1, row.n2, row.n3, row.n4, row.n5, row.n6].sort((a, b) => a - b);
 }
@@ -149,10 +154,12 @@ function weightedPick(probabilities: Array<{ number: number; probability: number
 export function trainRandomForestModel(
   rows: LottoRow[],
   latestRound: number,
-  options?: { windowSize?: number; estimators?: number }
+  options?: { windowSize?: number; estimators?: number; maxDepth?: number; minNumSamples?: number }
 ): PreparedRandomForestModel {
   const windowSize = options?.windowSize ?? 16;
-  const estimators = options?.estimators ?? 24;
+  const estimators = options?.estimators ?? readPositiveInt(process.env.LOTTO_RF_ESTIMATORS, process.env.VERCEL ? 8 : 24);
+  const maxDepth = options?.maxDepth ?? readPositiveInt(process.env.LOTTO_RF_MAX_DEPTH, process.env.VERCEL ? 6 : 8);
+  const minNumSamples = options?.minNumSamples ?? readPositiveInt(process.env.LOTTO_RF_MIN_SAMPLES, process.env.VERCEL ? 6 : 4);
   const { features, labels, latestFeatures, trainedRounds } = buildDataset(rows, windowSize);
 
   const rfOptions = {
@@ -163,8 +170,8 @@ export function trainRandomForestModel(
     useSampleBagging: true,
     noOOB: true,
     treeOptions: {
-      maxDepth: 8,
-      minNumSamples: 4,
+      maxDepth,
+      minNumSamples,
     },
   };
 

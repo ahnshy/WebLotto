@@ -77,6 +77,25 @@ function getCache(): LottoAiCache {
   return globalThis.__lottoAiCache__;
 }
 
+function readPositiveInt(value: string | undefined, fallback: number) {
+  const parsed = Number.parseInt(value ?? '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function getTrainingRoundLimit() {
+  return readPositiveInt(
+    process.env.LOTTO_AI_TRAINING_ROUNDS,
+    process.env.VERCEL ? 160 : Number.MAX_SAFE_INTEGER
+  );
+}
+
+function getTrainingHistory(rows: LottoRow[]) {
+  const maxRows = getTrainingRoundLimit();
+  return [...rows]
+    .sort((a, b) => b.round - a.round)
+    .slice(0, maxRows);
+}
+
 async function runWithDbFallback<T>(
   executor: (client: typeof supabase) => PromiseLike<{ data: T | null; error: unknown }>
 ): Promise<T> {
@@ -111,12 +130,13 @@ export async function fetchLatestRound(): Promise<number> {
   return Number(data.round);
 }
 
-export async function fetchLottoHistoryAll(): Promise<LottoRow[]> {
+export async function fetchLottoHistoryAll(limit?: number): Promise<LottoRow[]> {
   const pageSize = 1000;
   const rows: LottoRow[] = [];
+  const targetSize = limit && Number.isFinite(limit) ? Math.max(1, limit) : Number.MAX_SAFE_INTEGER;
 
-  for (let from = 0; ; from += pageSize) {
-    const to = from + pageSize - 1;
+  for (let from = 0; rows.length < targetSize; from += pageSize) {
+    const to = Math.min(from + pageSize - 1, targetSize - 1);
     const batch = await runWithDbFallback<LottoRow[]>((client) =>
       client
         .from('kr_lotto_results')
@@ -215,8 +235,8 @@ export async function ensurePreparedLstmModel(force = false) {
   }
 
   state.trainingPromise = (async () => {
-    const history = await fetchLottoHistoryAll();
-    const prepared = await trainLstmModel(history, latestRound);
+    const history = await fetchLottoHistoryAll(getTrainingRoundLimit());
+    const prepared = await trainLstmModel(getTrainingHistory(history), latestRound);
     disposePreparedLstm(state.prepared);
     state.prepared = prepared;
     state.latestRound = latestRound;
@@ -254,8 +274,8 @@ export async function ensurePreparedRandomForestModel(force = false) {
   }
 
   state.trainingPromise = (async () => {
-    const history = await fetchLottoHistoryAll();
-    const prepared = trainRandomForestModel(history, latestRound);
+    const history = await fetchLottoHistoryAll(getTrainingRoundLimit());
+    const prepared = trainRandomForestModel(getTrainingHistory(history), latestRound);
     state.prepared = prepared;
     state.latestRound = latestRound;
     await saveRandomForestModelToDisk(prepared);
