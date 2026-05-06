@@ -278,22 +278,26 @@ function RightInfoPanel() {
 export default async function LottoPrintPage({
   searchParams,
 }: {
-  searchParams: Promise<{ data?: string | string[] }>;
+  searchParams: Promise<{ data?: string | string[]; layout?: string | string[] }>;
 }) {
   const params = await searchParams;
   const picks = parseData(params.data);
+  const layout = Array.isArray(params.layout) ? params.layout[0] : params.layout;
+  const isPortrait = layout === 'portrait';
+  const pageWidthMm = isPortrait ? SLIP_HEIGHT_MM : SLIP_WIDTH_MM;
+  const pageHeightMm = isPortrait ? SLIP_WIDTH_MM : SLIP_HEIGHT_MM;
 
   return (
     <>
       <AutoPrint />
       <style>{`
         @page {
-          size: ${SLIP_WIDTH_MM}mm ${SLIP_HEIGHT_MM}mm landscape;
+          size: ${pageWidthMm}mm ${pageHeightMm}mm ${isPortrait ? 'portrait' : 'landscape'};
           margin: 0;
         }
         html, body {
-          width: ${SLIP_WIDTH_MM}mm;
-          height: ${SLIP_HEIGHT_MM}mm;
+          width: ${pageWidthMm}mm;
+          height: ${pageHeightMm}mm;
           margin: 0;
           padding: 0;
           background: #f3efe8;
@@ -308,8 +312,8 @@ export default async function LottoPrintPage({
         }
         @media screen {
           body {
-            min-width: ${SLIP_WIDTH_MM}mm;
-            min-height: ${SLIP_HEIGHT_MM}mm;
+            min-width: ${pageWidthMm}mm;
+            min-height: ${pageHeightMm}mm;
           }
         }
         @media print {
@@ -321,8 +325,8 @@ export default async function LottoPrintPage({
 
       <Box
         sx={{
-          width: `${SLIP_WIDTH_MM}mm`,
-          height: `${SLIP_HEIGHT_MM}mm`,
+          width: `${pageWidthMm}mm`,
+          height: `${pageHeightMm}mm`,
           display: 'grid',
           placeItems: 'stretch',
         }}
@@ -332,6 +336,9 @@ export default async function LottoPrintPage({
             position: 'relative',
             width: `${SLIP_WIDTH_MM}mm`,
             height: `${SLIP_HEIGHT_MM}mm`,
+            justifySelf: 'center',
+            alignSelf: 'center',
+            transform: isPortrait ? 'rotate(90deg)' : 'none',
             bgcolor: '#fffdfa',
             color: '#2d2522',
             border: '0.24mm solid #d5c8c0',
