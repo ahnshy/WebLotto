@@ -51,6 +51,7 @@ const WinningsTable = dynamic(() => import('@/components/WinningsTable'), {
   ),
   ssr: false
 });
+const QrWinCheckPanel = dynamic(() => import('@/components/QrWinCheckPanel'), {ssr: false});
 
 export default function HomePage() {
   const locale = useLocale();
@@ -77,6 +78,7 @@ export default function HomePage() {
   const isAiSection = section === SECTION_IDS.aiLstm;
   const isAiMlSection = section === SECTION_IDS.aiRandomForest;
   const isSimulationSection = section === SECTION_IDS.simulation;
+  const isQrWinCheckSection = section === SECTION_IDS.qrWinCheck;
   const isExtractionSection = isRandomSection || isStatSection || isPatternSection || isAiSection || isAiMlSection;
   const loadingMessage = section === SECTION_IDS.winnings ? t('loadingWinnings') : t('loading');
   const queueStorageKey = React.useMemo(() => `purchase-queue:${user?.id ?? 'guest'}`, [user?.id]);
@@ -263,6 +265,7 @@ export default function HomePage() {
       <Grid item xs={12} md sx={{order: {xs: 1, md: 1}, flexBasis: {xs: '100%', md: 580}, flexGrow: 1, minWidth: 0}}>
         <Paper sx={{p: {xs: 1.5, sm: 2}, position: 'relative', minHeight: 200}}>
           {section === SECTION_IDS.winnings && <WinningsTable rows={history} />}
+          {isQrWinCheckSection && <QrWinCheckPanel />}
           {section === SECTION_IDS.patternAnalysis && <PatternBoards rows={history} />}
           {isRandomSection && (
             <Stack spacing={1.5}>
