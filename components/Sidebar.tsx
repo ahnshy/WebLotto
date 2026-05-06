@@ -14,6 +14,7 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import HubIcon from '@mui/icons-material/Hub';
 import PolylineIcon from '@mui/icons-material/Polyline';
 import PsychologyAltIcon from '@mui/icons-material/PsychologyAlt';
+import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import QueryStatsIcon from '@mui/icons-material/QueryStats';
 import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import Image from 'next/image';
@@ -107,6 +108,10 @@ export default function Sidebar({
         </ListItemButton>
         <Collapse in={openAnalysis || collapsed} timeout="auto" unmountOnExit={!collapsed}>
           <List component="div" disablePadding sx={{mb: 1}}>
+            <ListItemButton selected={section === SECTION_IDS.qrWinCheck} sx={itemSx(section === SECTION_IDS.qrWinCheck, true)} onClick={() => selectSection(SECTION_IDS.qrWinCheck)}>
+              <ListItemIcon sx={{minWidth: 40}}><QrCodeScannerIcon sx={{fontSize: '1.1rem'}} /></ListItemIcon>
+              <ItemText collapsed={collapsed} primary={t('qrWinCheck')} />
+            </ListItemButton>
             <ListItemButton selected={section === SECTION_IDS.winnings} sx={itemSx(section === SECTION_IDS.winnings, true)} onClick={() => selectSection(SECTION_IDS.winnings)}>
               <ListItemIcon sx={{minWidth: 40}}><EmojiEventsIcon sx={{fontSize: '1.1rem'}} /></ListItemIcon>
               <ItemText collapsed={collapsed} primary={t('winnings')} />
