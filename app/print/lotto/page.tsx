@@ -301,7 +301,7 @@ export default async function LottoPrintPage({
           margin: 0;
           padding: 0;
           background: #f3efe8;
-          overflow: hidden;
+          overflow: ${isPortrait ? 'auto' : 'hidden'};
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
         }
@@ -319,6 +319,7 @@ export default async function LottoPrintPage({
         @media print {
           html, body {
             background: #fff;
+            overflow: hidden;
           }
         }
       `}</style>
@@ -329,16 +330,28 @@ export default async function LottoPrintPage({
           height: `${pageHeightMm}mm`,
           display: 'grid',
           placeItems: 'stretch',
+          position: 'relative',
+          overflow: isPortrait ? 'visible' : 'hidden',
         }}
       >
         <Box
           sx={{
-            position: 'relative',
             width: `${SLIP_WIDTH_MM}mm`,
             height: `${SLIP_HEIGHT_MM}mm`,
-            justifySelf: 'center',
-            alignSelf: 'center',
-            transform: isPortrait ? 'rotate(90deg)' : 'none',
+            ...(isPortrait
+              ? {
+                  position: 'absolute',
+                  top: 0,
+                  left: `${SLIP_HEIGHT_MM}mm`,
+                  transform: 'rotate(90deg)',
+                  transformOrigin: 'top left',
+                }
+              : {
+                  position: 'relative',
+                  justifySelf: 'center',
+                  alignSelf: 'center',
+                  transform: 'none',
+                }),
             bgcolor: '#fffdfa',
             color: '#2d2522',
             border: '0.24mm solid #d5c8c0',
