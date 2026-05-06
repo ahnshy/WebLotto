@@ -31,7 +31,7 @@ export const useNav = () => {
 };
 
 export function NavProvider({children}: {children: React.ReactNode}) {
-  const [section, setSection] = useState<Section>(SECTION_IDS.winnings);
+  const [section, setSection] = useState<Section>(SECTION_IDS.qrWinCheck);
 
   return (
     <NavContext.Provider value={{section, setSection}}>
