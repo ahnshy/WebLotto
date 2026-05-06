@@ -3,6 +3,7 @@
 import React, {createContext, useContext, useState} from 'react';
 
 export const SECTION_IDS = {
+  qrWinCheck: 'qrWinCheck',
   winnings: 'winnings',
   patternAnalysis: 'patternAnalysis',
   random: 'random',
