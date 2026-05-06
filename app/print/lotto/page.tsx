@@ -289,7 +289,7 @@ export default async function LottoPrintPage({
 
   return (
     <>
-      <AutoPrint />
+      <AutoPrint delayMs={isPortrait ? 900 : 300} />
       <style>{`
         @page {
           size: ${pageWidthMm}mm ${pageHeightMm}mm ${isPortrait ? 'portrait' : 'landscape'};
@@ -297,7 +297,7 @@ export default async function LottoPrintPage({
         }
         html, body {
           width: ${pageWidthMm}mm;
-          height: ${pageHeightMm}mm;
+          min-height: ${pageHeightMm}mm;
           margin: 0;
           padding: 0;
           background: #f3efe8;
@@ -318,6 +318,8 @@ export default async function LottoPrintPage({
         }
         @media print {
           html, body {
+            width: ${pageWidthMm}mm;
+            height: ${pageHeightMm}mm;
             background: #fff;
             overflow: hidden;
           }
@@ -328,10 +330,11 @@ export default async function LottoPrintPage({
         sx={{
           width: `${pageWidthMm}mm`,
           height: `${pageHeightMm}mm`,
-          display: 'grid',
-          placeItems: 'stretch',
+          display: isPortrait ? 'block' : 'grid',
+          placeItems: isPortrait ? undefined : 'stretch',
           position: 'relative',
-          overflow: isPortrait ? 'visible' : 'hidden',
+          overflow: isPortrait ? 'auto' : 'hidden',
+          bgcolor: '#f3efe8',
         }}
       >
         <Box
@@ -342,8 +345,8 @@ export default async function LottoPrintPage({
               ? {
                   position: 'absolute',
                   top: 0,
-                  left: `${SLIP_HEIGHT_MM}mm`,
-                  transform: 'rotate(90deg)',
+                  left: 0,
+                  transform: `rotate(90deg) translateY(-${SLIP_HEIGHT_MM}mm)`,
                   transformOrigin: 'top left',
                 }
               : {
