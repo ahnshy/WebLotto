@@ -11,6 +11,7 @@
   },
   "Sidebar": {
     "analysis": "분석",
+    "qrWinCheck": "QR 당첨 확인",
     "winnings": "당첨번호 보기",
     "patternAnalysis": "당첨 패턴 분석",
     "draw": "추출",
