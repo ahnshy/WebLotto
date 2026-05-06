@@ -11,6 +11,7 @@
   },
   "Sidebar": {
     "analysis": "Analysis",
+    "qrWinCheck": "QR Winning Check",
     "winnings": "Winning Numbers",
     "patternAnalysis": "Winning Pattern Analysis",
     "draw": "Generate",
